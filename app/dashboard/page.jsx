@@ -16,29 +16,36 @@ function Dashboard() {
 
   // State to hold tasks
   const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true); // Set default loading to true initially
 
   // Fetch tasks when component loads
   useEffect(() => {
     const fetchTasks = async () => {
-      const tasksRef = collection(db, 'tasks');
-      const q = query(tasksRef, where("department", "==", userDetails.department));
-      const querySnapshot = await getDocs(q);
-      const fetchedTasks = [];
+      try {
+        const tasksRef = collection(db, 'tasks');
+        const q = query(tasksRef, where("department", "==", userDetails.department));
+        const querySnapshot = await getDocs(q);
+        const fetchedTasks = [];
 
-      querySnapshot.forEach((doc) => {
-        const task = doc.data();
-        fetchedTasks.push({
-          id: doc.id,
-          description: task.taskDescription,
-          name: task.taskName,
-          latitude: task.latitude,
-          longitude: task.longitude,
-          startDate: task.startDate,
-          endDate: task.endDate
+        querySnapshot.forEach((doc) => {
+          const task = doc.data();
+          fetchedTasks.push({
+            id: doc.id,
+            description: task.taskDescription,
+            name: task.taskName,
+            latitude: task.latitude,
+            longitude: task.longitude,
+            startDate: task.startDate,
+            endDate: task.endDate
+          });
         });
-      });
 
-      setTasks(fetchedTasks); // Update the tasks state
+        setTasks(fetchedTasks); // Update the tasks state
+      } catch (error) {
+        console.error("Error fetching tasks: ", error);
+      } finally {
+        setLoading(false); // Ensure loading is set to false after tasks are fetched
+      }
     };
 
     fetchTasks(); // Call the function when component mounts
@@ -50,10 +57,13 @@ function Dashboard() {
       <button className='text-blue-600' onClick={() => router.push('/dashboard/addtask')}>Add Task</button>
       <div>
         <h2>Tasks</h2>
-        <ul className='flex flex-col gap-7'>
+        {loading ? (
+          <p>Loading tasks...</p>
+        ) : ( // Display tasks if they exist
+          <ul className='flex flex-col gap-7'>
           {tasks.length > 0 ? (
             tasks.map((task, index) => (
-              <li className=' border-2 border-blue-600 rounded-lg p-4' key={index}>
+              <li className='border-2 border-blue-600 rounded-lg p-4' key={task.id}>
                 <strong>Description:</strong> {task.description} <br />
                 <strong>Name:</strong> {task.name} <br />
                 <strong>Location:</strong> {task.latitude}, {task.longitude} <br />
@@ -65,6 +75,7 @@ function Dashboard() {
             <p>No tasks found for your department.</p>
           )}
         </ul>
+        )}
       </div>
     </div>
   );

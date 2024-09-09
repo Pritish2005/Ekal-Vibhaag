@@ -104,6 +104,7 @@ function Addtask() {
             if (hasDateOverlap(startDate, endDate, existingTask.startDate, existingTask.endDate)) {
                 conflicts.push({
                     id: doc.id,
+                    department: existingTask.department,
                     description: existingTask.taskDescription,
                     latitude: existingTask.latitude,
                     longitude: existingTask.longitude,
