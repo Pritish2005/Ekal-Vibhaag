@@ -90,6 +90,8 @@ function Tasks() {
 
       If no conflict exists (e.g., departments or descriptions suggest no interference), return the tasks in their original schedule.
 
+      If there is even slight chances of conflict, then optimize it.
+
       Your response should be in pure JSON format, without any markdown. The JSON should contain an array of tasks, each with:
       - taskName: The name of the task
       - department: The department handling the task
