@@ -10,8 +10,8 @@ function Addtask() {
     // User information
     const db = getFirestore(app);
     const userDetails = {
-        email: "priti@gmail.com",
-        department: "water",
+        email: "rujul@gmail.com",
+        department: "road",
         role: "admin"
     };
 
@@ -27,6 +27,8 @@ function Addtask() {
     const [error, setError] = useState(null);
     const [conflictingTasks, setConflictingTasks] = useState([]);
     const [proceed, setProceed] = useState(false); // Flag to handle override
+    const [resourceAllocation, setResourceAllocation] = useState(0);
+    const [loading, setLoading] = useState(false);
 
     // Ref for the map container
     const mapContainerRef = useRef(null);
@@ -55,17 +57,19 @@ function Addtask() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+        setLoading(true);
+    
         // Check for conflicts only if not already overriding
         if (!proceed) {
             const conflicts = await checkForConflicts();
             if (conflicts.length > 0) {
                 setConflictingTasks(conflicts);
                 setError('Conflicting task found. Do you wish to proceed?');
+                setLoading(false); // Stop loading when conflicts are found
                 return;
             }
         }
-
+    
         // If no conflicts or user has chosen to proceed
         try {
             const docRef = await addDoc(collection(db, "tasks"), {
@@ -78,17 +82,47 @@ function Addtask() {
                 collaborator: iscollab ? collaborator : null,
                 latitude,
                 longitude,
+                resourceAllocation,
                 userEmail: userDetails.email,
                 department: userDetails.department,
                 conflictingTasks: conflictingTasks, // Add the conflicting tasks info
                 conflictExists: conflictingTasks.length > 0, // Boolean to indicate conflict
                 role: userDetails.role
             });
-
+    
             console.log("Document written with ID: ", docRef.id);
+    
+            // After adding the current task, update the conflicting tasks
+            for (let conflict of conflictingTasks) {
+                const conflictingTaskRef = collection(db, 'tasks');
+                const q = query(conflictingTaskRef, where('id', '==', conflict.id));
+                const querySnapshot = await getDocs(q);
+    
+                querySnapshot.forEach(async (doc) => {
+                    // Update the conflicting task with the current task's conflict
+                    const docRef = doc.ref;
+                    const existingConflicts = doc.data().conflictingTasks || [];
+    
+                    await docRef.update({
+                        conflictingTasks: [...existingConflicts, {
+                            id: uniqueId,
+                            department: userDetails.department,
+                            description: taskDescription,
+                            latitude: latitude,
+                            longitude: longitude,
+                            startDate: startDate,
+                            endDate: endDate
+                        }],
+                        conflictExists: true // Ensure the conflictExists flag is set to true
+                    });
+                });
+            }
+    
             router.push(`/dashboard/addtask/${uniqueId}`);
         } catch (error) {
             console.error("Error adding document: ", error);
+        } finally {
+            setLoading(false); // Always stop loading after the task is added
         }
     };
 
@@ -130,20 +164,21 @@ function Addtask() {
     const handleProceed = () => {
         setProceed(true);
         setError(null); // Clear the error and proceed with task creation
+        setLoading(true); // Start loading when the user decides to proceed
     };
 
     return (
-        <div>
-            <h1 className='text-2xl'>Add Task</h1>
+        <div className="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-lg">
+            <h1 className='text-3xl font-bold mb-6 text-center'>Add Task</h1>
             {error && 
-                <div>
-                    <p className='text-red-600'>{error}</p>
+                <div className="bg-red-100 text-red-800 p-4 rounded-lg mb-6">
+                    <p>{error}</p>
                     {conflictingTasks.length > 0 && 
                         <div>
-                            <h2>Conflicting Tasks:</h2>
-                            <ul>
+                            <h2 className="text-lg font-semibold">Conflicting Tasks:</h2>
+                            <ul className="list-disc pl-6">
                                 {conflictingTasks.map((task, index) => (
-                                    <li key={index}>
+                                    <li key={index} className="mt-2">
                                         <strong>Description:</strong> {task.description} <br />
                                         <strong>Location:</strong> {task.latitude}, {task.longitude} <br />
                                         <strong>Start:</strong> {task.startDate} <br />
@@ -151,18 +186,21 @@ function Addtask() {
                                     </li>
                                 ))}
                             </ul>
-                            <button onClick={handleProceed} className='text-blue-600'>Do you wish to proceed?</button>
+                            <button onClick={handleProceed} className='bg-blue-500 text-white mt-4 px-4 py-2 rounded-lg hover:bg-blue-600'>
+                                Proceed Anyway
+                            </button>
                         </div>
                     }
                 </div>
             }
-            <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
+            <form className='flex flex-col gap-6' onSubmit={handleSubmit}>
                 <input
                     type="text"
                     placeholder="Enter Task Name"
                     value={taskName}
                     onChange={(e) => setTaskName(e.target.value)}
                     required
+                    className="p-3 border border-gray-300 rounded-lg"
                 />
                 <input
                     type="text"
@@ -170,40 +208,53 @@ function Addtask() {
                     value={taskDescription}
                     onChange={(e) => setTaskDescription(e.target.value)}
                     required
+                    className="p-3 border border-gray-300 rounded-lg"
                 />
-                <div className='flex gap-4'>
+                <input
+                    type="number"
+                    placeholder="Enter Resource Allocation"
+                    value={resourceAllocation}
+                    onChange={(e) => setResourceAllocation(e.target.value)}
+                    required
+                    className="p-3 border border-gray-300 rounded-lg"
+                />
+                <div className='grid grid-cols-2 gap-4'>
                     <div className='flex flex-col'>
-                        <label htmlFor='startDate'>Start Date</label>
+                        <label htmlFor='startDate' className='mb-2 font-medium'>Start Date</label>
                         <input
                             type="date"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
                             required
+                            className="p-3 border border-gray-300 rounded-lg"
                         />
                     </div>
                     <div className='flex flex-col'>
-                        <label htmlFor='endDate'>End Date</label>
+                        <label htmlFor='endDate' className='mb-2 font-medium'>End Date</label>
                         <input
                             type="date"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
                             required
+                            className="p-3 border border-gray-300 rounded-lg"
                         />
                     </div>
                 </div>
-                <div className='flex gap-4'>
+                <div className='flex items-center gap-4'>
                     <input
                         type="checkbox"
                         id='isCollab'
                         checked={iscollab}
                         onChange={() => setIsCollab(!iscollab)}
+                        className="h-4 w-4"
                     />
-                    <label htmlFor='isCollab'>Collab?</label>
+                    <label htmlFor='isCollab' className="font-medium">Collaborate?</label>
                     {iscollab &&
                         <select
                             value={collaborator}
                             onChange={(e) => setCollaborator(e.target.value)}
                             required
+                            className="p-3 border border-gray-300 rounded-lg"
                         >
                             <option value=''>Select Collaborator</option>
                             <option value="Water Department">Water Department</option>
@@ -212,13 +263,14 @@ function Addtask() {
                         </select>
                     }
                 </div>
-                <div>
+                <div className="grid grid-cols-2 gap-4">
                     <input
                         type='text'
                         placeholder='Enter Latitude'
                         value={latitude}
                         onChange={(e) => setLatitude(e.target.value)}
                         required
+                        className="p-3 border border-gray-300 rounded-lg"
                     />
                     <input
                         type='text'
@@ -226,12 +278,20 @@ function Addtask() {
                         value={longitude}
                         onChange={(e) => setLongitude(e.target.value)}
                         required
+                        className="p-3 border border-gray-300 rounded-lg"
                     />
                 </div>
                 {latitude !== '' && longitude !== '' &&
-                    <div style={{ height: '400px', width: '100%' }} ref={mapContainerRef} /> // Map container
+                    <div style={{ height: '400px', width: '100%' }} ref={mapContainerRef} className="mt-6 rounded-lg border border-gray-300" /> // Map container
                 }
-                <button type="submit" className='text-blue-600'>Add Task</button>
+                <button type="submit" className='bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600'>
+                    {
+                        loading ?
+                        'Loading...'
+                        :
+                        'Add Task'
+                    }
+                </button>
             </form>
         </div>
     );
