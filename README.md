@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# AI for Developer Productivity || Porting an Invoice and Billing Platform for Government Universities from Ionic to React Native (can use AI developer tools like Github copilot)
 
-## Getting Started
+This README provides an overview of the project, including team details, relevant links, tasks completed, tech stack, key features, and steps to run the project locally..
 
-First, run the development server:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Team Name: Nexus
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Team Leader: <a href= "https://github.com/Pritish2005/">@Pritish2005</a>
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### Team Details
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+- **Pritish Mahajan** - 2022UIC3506 - <a href= "https://github.com/Pritish2005/">@Pritish2005</a>
+- **Rujul Pritiwani** - 2022UIC3502 - <a href= "https://github.com/rujul16/">@rujul16</a>
+- **Shreyaa Jalan**   - 2022UIC3518 - <a href= "https://github.com/Shreyaa1712/">@Shreyaa1712</a>
+- **Revant Bhatia**   - 2022UIC3546 - <a href= "https://github.com/revantbhatia/">@revantbhatia</a>
+- **Harsh Kukreja**   - 2022UIC3552 - <a href= "https://github.com/Kukrejaharsh/">@Kukrejaharsh</a>
+- **Simran Arora**    - 2022UEE4638 - <a href= "https://github.com/thisissimmiii/">@thisissimmiii</a>
 
-## Learn More
+### Project Links
+- Internal Presentation: https://drive.google.com/file/d/12S4CUM8nHa30tC_rEtofFx1q9R4oGr9w/view?usp=sharing
+- Final SIH Presentation: https://drive.google.com/file/d/1PM4lcw3LEDEQhsFFdJOM6E6nzYXTUViT/view?usp=sharing
+- Video Demonstration: https://youtu.be/HsarXgeRgbg?feature=shared
+- Live Deployment: https://66d5dcfe7698c3007847ef15--billwithnexus.netlify.app
+- Source Code: https://github.com/Pritish2005/SIH_Internal/
+- Additional Resources: [Other Relevant Links](ANY OTHER RELEVANT LINKS)
 
-To learn more about Next.js, take a look at the following resources:
+- Here’s the updated "Steps to Run the Project Locally" section for your README, incorporating the new environment variables:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+### Steps to Run the Project Locally
 
-## Deploy on Vercel
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/Pritish2005/SIH_Internal.git
+   cd SIH_Internal
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+2. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+3. **Set Up Environment Variables**:  
+   Create a `.env` file in the root directory and add the following environment variables:
+   ```bash
+   EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_bWF4aW11bS1oZW4tMTEuY2xlcmsuYWNjb3VudHMuZGV2JA
+   EXPO_PUBLIC_FIREBASE_API_KEY=
+   EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=
+   EXPO_PUBLIC_FIREBASE_PROJECT_ID=
+   EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=
+   EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+   EXPO_PUBLIC_FIREBASE_APP_ID=
+   ```
+
+4. **Start the Development Server**:
+   ```bash
+   npm run start
+   ```
+
+5. **Run on Android/iOS Emulator** (using Expo):
+   ```bash
+   expo start
+   ```
+
+---
+
+This section now includes the correct environment variables and steps for running the app locally.
+
+
