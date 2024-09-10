@@ -19,8 +19,8 @@ Team Leader: <a href= "https://github.com/Pritish2005/">@Pritish2005</a>
 
 ### Project Links
 - SIH Presentation: https://drive.google.com/file/d/1s09r-eGFl8pZCdkiAIWIac95x_rDKEXx/view?usp=sharing
-- Video Demonstration: 
-- Live Deployment: https://66d5dcfe7698c3007847ef15--billwithnexus.netlify.app
+- Video Demonstration: https://docs.google.com/document/d/1sR-2vnbh7bZJU9JZ4xBeqBEnRKvdJDtQx5cbTug7300/edit
+- Live Deployment: https://ekal-vibhaag-o8hc.vercel.app/dashboard
 - Source Code: https://github.com/Pritish2005/Ekal-Vibhaag/
 
 - Here’s the updated "Steps to Run the Project Locally" section for your README, incorporating the new environment variables:
