@@ -1,4 +1,5 @@
-# AI for Developer Productivity || Porting an Invoice and Billing Platform for Government Universities from Ionic to React Native (can use AI developer tools like Github copilot)
+# Platform for Inter-departmental cooperation (at city level) in Indian Cities, for sharing data & resources, unified phasing, planning and implementation of projects.
+
 
 This README provides an overview of the project, including team details, relevant links, tasks completed, tech stack, key features, and steps to run the project locally..
 
@@ -17,12 +18,10 @@ Team Leader: <a href= "https://github.com/Pritish2005/">@Pritish2005</a>
 - **Simran Arora**    - 2022UEE4638 - <a href= "https://github.com/thisissimmiii/">@thisissimmiii</a>
 
 ### Project Links
-- Internal Presentation: https://drive.google.com/file/d/12S4CUM8nHa30tC_rEtofFx1q9R4oGr9w/view?usp=sharing
-- Final SIH Presentation: https://drive.google.com/file/d/1PM4lcw3LEDEQhsFFdJOM6E6nzYXTUViT/view?usp=sharing
-- Video Demonstration: https://youtu.be/HsarXgeRgbg?feature=shared
+- SIH Presentation: https://drive.google.com/file/d/1s09r-eGFl8pZCdkiAIWIac95x_rDKEXx/view?usp=sharing
+- Video Demonstration: 
 - Live Deployment: https://66d5dcfe7698c3007847ef15--billwithnexus.netlify.app
-- Source Code: https://github.com/Pritish2005/SIH_Internal/
-- Additional Resources: [Other Relevant Links](ANY OTHER RELEVANT LINKS)
+- Source Code: https://github.com/Pritish2005/Ekal-Vibhaag/
 
 - Here’s the updated "Steps to Run the Project Locally" section for your README, incorporating the new environment variables:
 
@@ -32,8 +31,7 @@ Team Leader: <a href= "https://github.com/Pritish2005/">@Pritish2005</a>
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/Pritish2005/SIH_Internal.git
-   cd SIH_Internal
+   git clone https://github.com/Pritish2005/Ekal-Vibhaag.git
    ```
 
 2. **Install Dependencies**:
@@ -55,13 +53,10 @@ Team Leader: <a href= "https://github.com/Pritish2005/">@Pritish2005</a>
 
 4. **Start the Development Server**:
    ```bash
-   npm run start
+   npm run dev
    ```
 
-5. **Run on Android/iOS Emulator** (using Expo):
-   ```bash
-   expo start
-   ```
+5. **Open https://localhost:3000
 
 ---
 
