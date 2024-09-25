@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Platform for Inter-departmental cooperation (at city level) in Indian Cities, for sharing data & resources, unified phasing, planning and implementation of projects.
 
-## Getting Started
 
-First, run the development server:
+This README provides an overview of the project, including team details, relevant links, tasks completed, tech stack, key features, and steps to run the project locally..
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Team Name: Nexus
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+Team Leader: <a href= "https://github.com/Pritish2005/">@Pritish2005</a>
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+### Team Details
 
-## Learn More
+- **Pritish Mahajan** - 2022UIC3506 - <a href= "https://github.com/Pritish2005/">@Pritish2005</a>
+- **Rujul Pritiwani** - 2022UIC3502 - <a href= "https://github.com/rujul16/">@rujul16</a>
+- **Shreyaa Jalan**   - 2022UIC3518 - <a href= "https://github.com/Shreyaa1712/">@Shreyaa1712</a>
+- **Revant Bhatia**   - 2022UIC3546 - <a href= "https://github.com/revantbhatia/">@revantbhatia</a>
+- **Harsh Kukreja**   - 2022UIC3552 - <a href= "https://github.com/Kukrejaharsh/">@Kukrejaharsh</a>
+- **Simran Arora**    - 2022UEE4638 - <a href= "https://github.com/thisissimmiii/">@thisissimmiii</a>
 
-To learn more about Next.js, take a look at the following resources:
+### Project Links
+- SIH Presentation: https://drive.google.com/file/d/1s09r-eGFl8pZCdkiAIWIac95x_rDKEXx/view?usp=sharing
+- Video Demonstration: https://docs.google.com/document/d/1sR-2vnbh7bZJU9JZ4xBeqBEnRKvdJDtQx5cbTug7300/edit
+- Live Deployment: https://ekal-vibhaag-o8hc.vercel.app/dashboard
+- Source Code: https://github.com/Pritish2005/Ekal-Vibhaag/
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Here’s the updated "Steps to Run the Project Locally" section for your README, incorporating the new environment variables:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+### Steps to Run the Project Locally
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/Pritish2005/Ekal-Vibhaag.git
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+2. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Set Up Environment Variables**:  
+   Create a `.env` file in the root directory and add the following environment variables:
+   ```bash
+   EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_bWF4aW11bS1oZW4tMTEuY2xlcmsuYWNjb3VudHMuZGV2JA
+   EXPO_PUBLIC_FIREBASE_API_KEY=
+   EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=
+   EXPO_PUBLIC_FIREBASE_PROJECT_ID=
+   EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=
+   EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+   EXPO_PUBLIC_FIREBASE_APP_ID=
+   ```
+
+4. **Start the Development Server**:
+   ```bash
+   npm run dev
+   ```
+
+5. **Open https://localhost:3000
+
+---
+
+This section now includes the correct environment variables and steps for running the app locally.
+
+
