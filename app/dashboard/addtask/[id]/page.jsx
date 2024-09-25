@@ -1,10 +1,10 @@
 'use client'
 import { useParams, useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs, getFirestore, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, getFirestore, query, where, updateDoc } from "firebase/firestore";
 import { app } from '../../../../lib/firebaseConfig.js';
 import toast from 'react-hot-toast'; // For notifications
-import { chatSession} from '../../../../lib/GeminiAI.js';
+import { chatSession } from '../../../../lib/GeminiAI.js';
 
 function Tasks() {
   const db = getFirestore(app); // Initialize Firestore
@@ -17,9 +17,9 @@ function Tasks() {
 
   const router = useRouter();
 
-  // Fetch task and run optimizer as soon as the page loads
+  // Fetch task and check for the optimized schedule
   useEffect(() => {
-    const fetchTaskAndOptimize = async () => {
+    const fetchTaskAndCheckSchedule = async () => {
       try {
         if (!id) {
           setError('No task ID provided.');
@@ -35,12 +35,20 @@ function Tasks() {
 
         if (!querySnapshot.empty) {
           // Fetch the first document
-          const docData = querySnapshot.docs[0].data(); 
+          const docRef = querySnapshot.docs[0].ref;
+          const docData = querySnapshot.docs[0].data();
           setTaskData(docData);
 
-          // Automatically call the AI optimizer to generate an optimal schedule
-          if (docData.conflictExists) {
-            await generateOptimalSchedule(docData, docData.conflictingTasks);
+          // Check if the optimized schedule already exists
+          if (docData.optimizedSchedule) {
+            setOptimizedSchedule(docData.optimizedSchedule);
+          } else if (docData.conflictExists) {
+            // If not, call the optimizer and store the result
+            const optimizedSchedule = await generateOptimalSchedule(docData, docData.conflictingTasks);
+            if (optimizedSchedule) {
+              await updateDoc(docRef, { optimizedSchedule }); // Store the optimized schedule
+              setOptimizedSchedule(optimizedSchedule);
+            }
           }
         } else {
           setError('No task found with that ID.');
@@ -52,7 +60,7 @@ function Tasks() {
       }
     };
 
-    fetchTaskAndOptimize();
+    fetchTaskAndCheckSchedule();
   }, [id, db]);
 
   // Function to interact with Gemini API to resolve conflicts
@@ -68,7 +76,7 @@ function Tasks() {
         longitude: conflict.longitude
       }));
 
-      const schedulePrompt = 
+      const schedulePrompt =
       `You are an AI scheduler optimizing tasks that have potential location and date conflicts. 
 
       Task A: 
@@ -105,10 +113,11 @@ function Tasks() {
 
       const mockJsonResp = res.response.text().replace('```json', '').replace('```', ''); // Clean up the response
       const jsonFeedbackResponse = JSON.parse(mockJsonResp);
-      setOptimizedSchedule(jsonFeedbackResponse);
+      return jsonFeedbackResponse; // Return the optimized schedule
     } catch (error) {
       console.error('Error generating optimal schedule:', error);
       toast('Error generating optimal schedule. Please try again.');
+      return null;
     } finally {
       setLoading(false);
     }
