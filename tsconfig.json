@@ -26,7 +26,8 @@
     "next-env.d.ts",
     ".next/types/**/*.ts",
     "**/*.ts",
-    "**/*.tsx"
+    "**/*.tsx",
+    "app/dashboard/postblog/[id]/page.jsx"
   ],
   "exclude": [
     "node_modules"
