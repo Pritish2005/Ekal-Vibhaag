@@ -1,5 +1,5 @@
 'use client'
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs, getFirestore, query, where } from "firebase/firestore";
 import { app } from '../../../../lib/firebaseConfig.js';
@@ -14,6 +14,8 @@ function Tasks() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [optimizedSchedule, setOptimizedSchedule] = useState(null); // Store optimized schedule
+
+  const router = useRouter();
 
   // Fetch task and run optimizer as soon as the page loads
   useEffect(() => {
@@ -152,6 +154,11 @@ function Tasks() {
       ) : (
         <p>No task data to display.</p>
       )}
+      <div className='mt-5'>
+      <button className='bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600' onClick={()=>router.push(`/dashboard/addtask/${id}/requestcollab`)}>
+        <h1>Request Collab</h1>
+      </button>
+      </div>
     </div>
   );
 }
