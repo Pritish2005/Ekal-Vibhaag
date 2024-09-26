@@ -147,10 +147,10 @@ function Dashboard() {
       </div>
 
       {/* Image Slider */}
-      <div className="mt-5 flex justify-center">
+      <div className="mt-5 mb-8  flex justify-center">
         <SimpleImageSlider
-          width={1500}
-          height={504}
+          width={'90%'}
+          height={200}
           images={images}
           showBullets={true}
           showNavs={true}
@@ -158,7 +158,7 @@ function Dashboard() {
       </div>
 
       {/* Action Buttons */}
-      <div className="mt-8 text-center">
+      <div className="mt-15 text-center">
         <div className="flex justify-center gap-4">
           <button
             className="bg-orange-400 text-white px-6 py-2 rounded-lg hover:bg-orange-500"
@@ -171,6 +171,12 @@ function Dashboard() {
             onClick={() => router.push('/dashboard/viewtasks')}
           >
             View All Tasks
+          </button>
+          <button
+            className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600"
+            onClick={() => router.push('/dashboard/inventory')}
+          >
+            Inventory
           </button>
           <button
             className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
