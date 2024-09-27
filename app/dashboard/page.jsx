@@ -2,41 +2,44 @@
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { getFirestore, collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
+import { useSession } from "next-auth/react"; // Import useSession
 import { app } from '../../lib/firebaseConfig.js';
 import SimpleImageSlider from "react-simple-image-slider";
 
 function Dashboard() {
-  const userDetails = {
-    email: "rujul@gmail.com",
-    department: "road",
-    role: "admin"
-  };
-
   const db = getFirestore(app);
   const router = useRouter();
+
+  const { data: session, status } = useSession(); // Access session data
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Image URLs for the slider
   const images = [
-    { url: "https://images.unsplash.com/photo-1726942371143-3afca583a72f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw3fHx8ZW58MHx8fHx8" },
+    { url: "https://images.unsplash.com/photo-1726942371143-3afca583a72f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw3fHx8ZW58MHx8fHx8fHx8" },
     { url: "https://images.unsplash.com/photo-1726497864623-7a681908fccd?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwxNHx8fGVufDB8fHx8fA%3D%3D" },
     { url: "https://images.unsplash.com/photo-1725904411459-fe8233df1424?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwxMnx8fGVufDB8fHx8fA%3D%3D" },
     { url: "https://plus.unsplash.com/premium_photo-1723507306975-36dfe1666df3?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwxOXx8fGVufDB8fHx8fA%3D%3D" },
     { url: "https://plus.unsplash.com/premium_photo-1724174932633-6e9fc851e182?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwxNXx8fGVufDB8fHx8fA%3D%3D" },
   ];
 
-  // Fetch tasks when component loads
+  // Fetch tasks when session is available
   useEffect(() => {
+    if (status === "loading") return; // Don't do anything while loading
+    if (!session) {
+      router.push('/login'); // Redirect to login if not authenticated
+      return;
+    }
+
     const fetchTasks = async () => {
       try {
         const tasksRef = collection(db, 'tasks');
-        const q = query(tasksRef, where("department", "==", userDetails.department),orderBy("startDate", "desc"),limit(3));
-
-          // tasksRef,
-          // where("department", "==", userDetails.department),
-          // orderBy("startDate", "desc"), // Sort by startDate in descending order
-          // limit(3) // Limit to 3 tasks
+        const q = query(
+          tasksRef,
+          where("department", "==", session.user.department), // Filter by department
+          orderBy("startDate", "desc"),  // Sort by startDate in descending order
+          limit(3)  // Limit to 3 tasks
+        );
         const querySnapshot = await getDocs(q);
         const fetchedTasks = [];
 
@@ -48,79 +51,8 @@ function Dashboard() {
             name: task.taskName,
             latitude: task.latitude,
             longitude: task.longitude,
-            startDate: task.startDate.toDate(), // Convert Timestamp to date (if Timestamp)
-            endDate: task.endDate.toDate() // Convert Timestamp to date (if Timestamp)
-          });
-        });
-
-        console.log("Fetched tasks:", fetchedTasks); // Logging tasks for debugging
-        setTasks(fetchedTasks);
-      } catch (error) {
-        console.error("Error fetching tasks: ", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTasks();
-  }, [db, userDetails.department]);
-
-  // useEffect(() => {
-  //   const fetchTasks = async () => {
-  //     try {
-  //       const tasksRef = collection(db, 'tasks');
-  //       const q = query(
-  //         tasksRef,
-  //         where("department", "==", userDetails.department),
-  //         // orderBy("startDate", "desc"), // Sort by startDate in descending order
-  //         // limit(3) // Limit to 3 tasks
-  //       );
-  //       const querySnapshot = await getDocs(q);
-  //       const fetchedTasks = [];
-
-  //       querySnapshot.forEach((doc) => {
-  //         const task = doc.data();
-  //         fetchedTasks.push({
-  //           id: doc.id,
-  //           description: task.taskDescription,
-  //           name: task.taskName,
-  //           latitude: task.latitude,
-  //           longitude: task.longitude,
-  //           startDate: task.startDate.toDate(), // Convert Timestamp to date (if Timestamp)
-  //           endDate: task.endDate.toDate() // Convert Timestamp to date (if Timestamp)
-  //         });
-  //       });
-
-  //       console.log("Fetched tasks:", fetchedTasks); // Logging tasks for debugging
-  //       setTasks(fetchedTasks);
-  //     } catch (error) {
-  //       console.error("Error fetching tasks: ", error);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchTasks();
-  // }, []);
-
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const tasksRef = collection(db, 'tasks');
-        const q = query(tasksRef, where("department", "==", userDetails.department));
-        const querySnapshot = await getDocs(q);
-        const fetchedTasks = [];
-
-        querySnapshot.forEach((doc) => {
-          const task = doc.data();
-          fetchedTasks.push({
-            id: doc.id,
-            description: task.taskDescription,
-            name: task.taskName,
-            latitude: task.latitude,
-            longitude: task.longitude,
-            startDate: task.startDate,
-            endDate: task.endDate
+            startDate: task.startDate.toDate(),  // Convert Timestamp to date
+            endDate: task.endDate.toDate()  // Convert Timestamp to date
           });
         });
 
@@ -133,21 +65,24 @@ function Dashboard() {
     };
 
     fetchTasks();
-  }, [db, userDetails.department]);
+  }, [db, session, status, router]);
 
   return (
     <div className="min-h-screen p-5 bg-gray-50">
+      {/* User Info */}
       <div className="flex justify-between items-center bg-white p-4 shadow-md">
         <div className="flex items-center">
           <div className="ml-4">
-            <h1 className="text-lg font-bold">Welcome, {userDetails.email}</h1>
-            <p>Access: {userDetails.role}</p>
+            <h1 className="text-lg font-bold">
+              Welcome, {session ? session.user.email : 'Loading...'}
+            </h1>
+            {session && <p>Access: {session.user.role || 'user'}</p>}
           </div>
         </div>
       </div>
 
       {/* Image Slider */}
-      <div className="mt-5 mb-8  flex justify-center">
+      <div className="mt-5 mb-8 flex justify-center">
         <SimpleImageSlider
           width={'90%'}
           height={200}
@@ -210,12 +145,12 @@ function Dashboard() {
                   <h3 className="text-lg font-semibold mb-2">{task.name}</h3>
                   <p className="text-gray-700 mb-2"><strong>Description:</strong> {task.description}</p>
                   <p className="text-gray-700 mb-2"><strong>Location:</strong> {task.latitude}, {task.longitude}</p>
-                  <p className="text-gray-700 mb-2"><strong>Start:</strong> {task.startDate}</p>
-                  <p className="text-gray-700 mb-2"><strong>End:</strong> {task.endDate}</p>
+                  <p className="text-gray-700 mb-2"><strong>Start:</strong> {task.startDate.toLocaleDateString()}</p>
+                  <p className="text-gray-700 mb-2"><strong>End:</strong> {task.endDate.toLocaleDateString()}</p>
                 </div>
               ))
             ) : (
-              <p className="text-center col-span-3">No tasks found for your department.</p>
+              <p className="text-center col-span-3">No tasks available.</p>
             )}
           </div>
         )}
