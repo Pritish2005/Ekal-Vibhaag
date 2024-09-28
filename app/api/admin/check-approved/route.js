@@ -1,17 +1,31 @@
-import { getSession } from 'next-auth/react';
 import User from '../../../../models/User';
-import connectToDatabase from '../../../../lib/mongodb';
+import connect from '../../../../utils/db';
 
-export const GET = async (req) => {
-  const session = await getSession({ req });
+export const POST = async (req) => {
+  try {
+    const { email } = await req.json(); // Extract email from request body
 
-  if (!session) {
-    return new Response(JSON.stringify({ isApproved: false }), { status: 401 });
+    // Connect to MongoDB
+    await connect();
+
+    // Find user by email
+    const user = await User.findOne({ email });
+
+    // Check if user exists
+    if (!user) {
+      return new Response(JSON.stringify({ message: 'User not found' }), { status: 404 });
+    }
+
+    // Return approval status
+    return new Response(
+      JSON.stringify({ isApproved: user.isApproved }),
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Error checking user approval:', error);
+    return new Response(
+      JSON.stringify({ message: 'Internal server error' }),
+      { status: 500 }
+    );
   }
-
-  await connectToDatabase();
-
-  const user = await User.findOne({ email: session.user.email });
-
-  return new Response(JSON.stringify({ isApproved: user.isApproved }), { status: 200 });
 };
