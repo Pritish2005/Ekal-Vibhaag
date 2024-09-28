@@ -21,8 +21,8 @@ const userSchema = new mongoose.Schema({
   },
   isApproved: {
     type: Boolean,
-    default: false, // Default is false for admins until approved
+    default: false,
   },
-});
+},{timestamps: true});
 
 export default mongoose.models.User || mongoose.model('User', userSchema);

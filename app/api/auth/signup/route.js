@@ -1,31 +1,29 @@
-import User from '../../../../models/User';
-import connectToDatabase from '../../../../lib/mongodb';
-import bcrypt from 'bcryptjs';
+import User from "../../../../models/User.js";
+import connect from "../../../../utils/db.js";
+import bcrypt from "bcryptjs";
+import { NextResponse } from "next/server";
 
-export const POST = async (req) => {
-  const { email, password, department } = await req.json();
+export const POST = async (request) => {
+  const { email, password, department } = await request.json();
 
-  await connectToDatabase();
+  await connect();
 
-  // Check if user already exists
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    return new Response(JSON.stringify({ message: 'User already exists' }), { status: 400 });
-  }
+  const hashedPassword = await bcrypt.hash(password, 5);
 
-  // Hash password
-  const hashedPassword = await bcrypt.hash(password, 12);
-
-  // Create a new user
-  const user = new User({
+  const newUser = new User({
     email,
     password: hashedPassword,
-    department,
-    isAdmin: false,  // Regular user by default
-    isApproved: false,  // Not approved initially
+    department
   });
 
-  await user.save();
-
-  return new Response(JSON.stringify({ message: 'User created successfully' }), { status: 201 });
+  try {
+    await newUser.save();
+    return new NextResponse("User has been created", {
+      status: 201,
+    });
+  } catch (err) {
+    return new NextResponse(err.message, {
+      status: 500,
+    });
+  }
 };
