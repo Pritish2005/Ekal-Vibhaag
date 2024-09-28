@@ -77,7 +77,7 @@ function Dashboard() {
             <h1 className="text-lg font-bold">
               Welcome, {session ? session.user.email : 'Loading...'}
             </h1>
-            {session && <p>Access: {session.user.role || 'user'}</p>}
+            {session && <p>Department: {session.user.department}</p>}
           </div>
         </div>
       </div>
@@ -107,12 +107,6 @@ function Dashboard() {
             onClick={() => router.push('/dashboard/viewtasks')}
           >
             View All Tasks
-          </button>
-          <button
-            className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600"
-            onClick={() => router.push('/dashboard/inventory')}
-          >
-            Inventory
           </button>
           <button
             className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
