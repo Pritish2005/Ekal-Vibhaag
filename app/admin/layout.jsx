@@ -1,10 +1,12 @@
 'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { FiHome, FiBox, FiUsers, FiClipboard } from 'react-icons/fi';
 
 const AdminLayout = ({ children }) => {
   const [isOpen, setIsOpen] = useState(true);
+  const currentPath = usePathname(); // Get the current path
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -26,15 +28,11 @@ const AdminLayout = ({ children }) => {
   return (
     <div className="flex min-h-screen bg-gray-100">
       <aside
-        className={`bg-white shadow-lg transition-all duration-300 ease-in-out ${
-          isOpen ? 'w-64' : 'w-20'
-        } overflow-hidden`}
+        className={`bg-white shadow-lg transition-all duration-300 ease-in-out ${isOpen ? 'w-64' : 'w-20'} overflow-hidden`}
       >
         <div className="flex h-16 items-center justify-between px-4">
           <h2
-            className={`text-xl font-bold text-gray-800 transition-opacity duration-300 ${
-              isOpen ? 'opacity-100' : 'opacity-0 w-0'
-            }`}
+            className={`text-xl font-bold text-gray-800 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 w-0'}`}
           >
             Admin Menu
           </h2>
@@ -65,13 +63,13 @@ const AdminLayout = ({ children }) => {
             <Link key={index} href={item.href}>
               <button
                 onClick={handleIconClick}
-                className={`flex items-center w-full text-left py-2.5 px-4 text-gray-700 hover:bg-gray-200 transition-all duration-300`}
+                className={`flex items-center w-full text-left py-2.5 px-4 transition-all duration-300 ${
+                  currentPath === item.href ? 'bg-blue-500 text-white' : 'text-gray-700 hover:bg-gray-200'
+                }`}
               >
                 <item.icon className="w-6 h-6 min-w-[24px]" />
                 <span
-                  className={`ml-3 transition-opacity duration-300 ${
-                    isOpen ? 'opacity-100' : 'opacity-0 w-0'
-                  }`}
+                  className={`ml-3 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 w-0'}`}
                 >
                   {item.label}
                 </span>

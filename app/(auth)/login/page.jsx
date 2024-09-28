@@ -23,9 +23,8 @@ const Login = () => {
 
     setLoading(true);
 
-    // Check if the user is approved before sign in
     const checkApproved = await fetch("/api/admin/check-approved", {
-      method: "POST", 
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
@@ -40,7 +39,6 @@ const Login = () => {
       return;
     }
 
-    // Proceed with signIn after approval check
     const result = await signIn("credentials", {
       email,
       password,
@@ -57,20 +55,45 @@ const Login = () => {
   };
 
   return (
-    <div>
-      <h1>{success ? success : "Welcome Back"}</h1>
-      <h2>Please sign in to see the dashboard.</h2>
+    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+      <div className="bg-white p-8 shadow-lg rounded-lg max-w-md w-full">
+        <h1 className="text-2xl font-bold text-gray-800 mb-4">
+          {success ? success : "Welcome Back"}
+        </h1>
+        <h2 className="text-gray-600 mb-6">
+          Please sign in to access the dashboard.
+        </h2>
 
-      <form onSubmit={handleSubmit}>
-        <input type="text" placeholder="Email" required />
-        <input type="password" placeholder="Password" required />
-        <button type="submit" disabled={loading}>
-          {loading ? "Loading..." : "Login"}
-        </button>
-        {error && <p>{error}</p>}
-      </form>
-      <span>- OR -</span>
-      <Link href="/register">Create new account</Link>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="email"
+            placeholder="Email"
+            required
+            className="w-full p-3 border rounded-lg focus:outline-none focus:border-indigo-500"
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            required
+            className="w-full p-3 border rounded-lg focus:outline-none focus:border-indigo-500"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-500 transition-all duration-300"
+          >
+            {loading ? "Loading..." : "Login"}
+          </button>
+          {error && <p className="text-red-500">{error}</p>}
+        </form>
+
+        <div className="flex flex-col items-center justify-between mt-3 gap-2">
+          <span className="text-gray-500">- OR -</span>
+          <Link href="/register" className="text-indigo-600 hover:underline">
+            Create new account
+          </Link>
+        </div>
+      </div>
     </div>
   );
 };
