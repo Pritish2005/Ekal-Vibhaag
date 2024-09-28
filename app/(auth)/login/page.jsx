@@ -29,7 +29,7 @@ const Login = () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email }), // Sending email to the backend to check approval
+      body: JSON.stringify({ email }),
     });
 
     const data = await checkApproved.json();
@@ -44,13 +44,13 @@ const Login = () => {
     const result = await signIn("credentials", {
       email,
       password,
-      redirect: false, // Disable automatic redirect
+      redirect: false,
     });
 
     if (result.error) {
       setError(result.error);
     } else {
-      router.push("/dashboard"); // Redirect on successful login
+      router.push("/dashboard");
     }
 
     setLoading(false);
@@ -64,7 +64,6 @@ const Login = () => {
       <form onSubmit={handleSubmit}>
         <input type="text" placeholder="Email" required />
         <input type="password" placeholder="Password" required />
-        <input type="text" placeholder="Department" required />
         <button type="submit" disabled={loading}>
           {loading ? "Loading..." : "Login"}
         </button>

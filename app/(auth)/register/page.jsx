@@ -9,9 +9,12 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const email = e.target[0].value;
-    const department = e.target[1].value;
-    const password = e.target[2].value;
+    const name = e.target[0].value;
+    const email = e.target[1].value;
+    const department = e.target[2].value;
+    const password = e.target[3].value;
+
+    console.log("Submitting registration with:", { name, email, department }); // Add this line for debugging
 
     try {
       const res = await fetch("/api/auth/signup", {
@@ -20,6 +23,7 @@ const Register = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          name,
           email,
           password,
           department,
@@ -30,10 +34,11 @@ const Register = () => {
       } else {
         const errorData = await res.json();
         setError(errorData.message || "Something went wrong!");
+        console.error("Registration error:", errorData); // Add this line for debugging
       }
     } catch (err) {
       setError("Something went wrong!");
-      console.log(err);
+      console.error("Registration error:", err); // Update this line for more detailed error logging
     }
   };
 
@@ -42,6 +47,11 @@ const Register = () => {
       <h1>Create an Account</h1>
       <h2>Please sign up to see the dashboard.</h2>
       <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Name"
+          required
+        />
         <input
           type="text"
           placeholder="Email"

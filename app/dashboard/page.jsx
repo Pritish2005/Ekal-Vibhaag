@@ -11,6 +11,7 @@ function Dashboard() {
   const router = useRouter();
 
   const { data: session, status } = useSession(); // Access session data
+  console.log('session data:',session ? session.user: null);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
