@@ -74,6 +74,7 @@ import React, { useState } from "react";
 import { collection, addDoc } from "firebase/firestore";
 import { getFirestore } from "@firebase/firestore";
 import { initializeApp } from "firebase/app";
+import { useSession } from "next-auth/react";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -86,12 +87,30 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
+const { data: session, status } = useSession(); // Access session data and status
+
+    if (status === 'loading') {
+        return <div>Loading...</div>; // Show a loading message while checking session
+    }
+
+    if (!session) {
+        return (
+            <div className="flex flex-col items-center justify-center h-screen text-center">
+                <h1 className="text-2xl font-bold">Please Login</h1>
+                <p className="mt-4">You need to be logged in to view this page.</p>
+            </div>
+        );
+    }
+
+const userDetails =session.user;
+
 const db = getFirestore(app);
 const WriteBlog = () => {
   const [blog, setBlog] = useState({
     title: "",
     content: "",
-    author: "",
+    author: userDetails.email,
+    department: userDetails.department,
     date: new Date().toLocaleDateString(),
   });
 
@@ -111,7 +130,6 @@ const WriteBlog = () => {
     setBlog({
       title: "",
       content: "",
-      author: "",
       date: new Date().toLocaleDateString(),
     });
 
@@ -150,16 +168,6 @@ const WriteBlog = () => {
           </div>
 
           <div>
-            <label className="block text-lg mb-2">Author</label>
-            <input
-              type="text"
-              name="author"
-              value={blog.author}
-              onChange={handleChange}
-              placeholder="Enter the author name"
-              className="w-full p-3 border border-gray-300 rounded-lg"
-              required
-            />
           </div>
 
           <button

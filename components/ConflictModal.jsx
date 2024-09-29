@@ -100,8 +100,6 @@ const ConflictModal = ({ latitude, longitude, startDate, endDate, collaborators,
         }
     };
 
-    console.log('conflictingTasks:', conflictingTasks);
-
     const hasDateOverlap = (newStart, newEnd, existingStart, existingEnd) => {
         const newStartDate = new Date(newStart);
         const newEndDate = new Date(newEnd);
@@ -111,12 +109,9 @@ const ConflictModal = ({ latitude, longitude, startDate, endDate, collaborators,
         return (newStartDate <= existingEndDate && newEndDate >= existingStartDate);
     };
 
-    console.log(collaborators )
-    // Tasks grouped
-    const suggestedTasks = conflictingTasks; // Assuming all tasks are suggested by AI for now
+    const suggestedTasks = conflictingTasks; 
     const collabTasks = collaborators;
-    
-    // Filter "otherTasks" by excluding tasks from collaborators and the conflicting tasks
+
     const otherTasks = departments.filter(department => 
         !collaborators.includes(department) && 
         !conflictingTasks.some(task => task.department === department)
@@ -129,31 +124,33 @@ const ConflictModal = ({ latitude, longitude, startDate, endDate, collaborators,
     return (
         <>
             {isOpen && (
-                <div style={overlayStyle}>
-                    <div style={modalStyle}>
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+                    <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full">
                         <h2 className="text-lg font-bold mb-4 flex items-center">
                             <MdReportProblem size={24} className="mr-2" />
                             Conflicting Tasks
                         </h2>
 
                         {loading ? (
-                            <p>Loading...</p>
+                            <div className="flex justify-center items-center">
+                                <p>Loading...</p>
+                            </div>
                         ) : (
                             <>
                                 {/* Suggested Tasks by AI */}
-                                <div>
-                                    <h3 className="font-semibold">Suggested by AI</h3>
+                                <div className="mb-4">
+                                    <h3 className="font-semibold text-lg">Suggested by AI</h3>
                                     {suggestedTasks.length === 0 ? (
                                         <p>No suggested conflicts found.</p>
                                     ) : (
                                         suggestedTasks.map((task) => (
-                                            <div key={task.id} className="mb-2">
-                                                <div className="cursor-pointer" onClick={() => toggleTaskDetails(task.id)}>
-                                                    <strong>Task Name:</strong> - {task.name}
-                                                    <strong>Task Department</strong> - {task.department}
+                                            <div key={task.id} className="mb-2 p-2 border border-gray-300 rounded hover:bg-gray-100 cursor-pointer" onClick={() => toggleTaskDetails(task.id)}>
+                                                <strong>Task Name:</strong> {task.name}
+                                                <div className="text-sm text-gray-500">
+                                                    <strong>Department:</strong> {task.department}
                                                 </div>
                                                 {expandedTaskId === task.id && (
-                                                    <div className="pl-4">
+                                                    <div className="pl-4 mt-2 text-gray-700">
                                                         <p><strong>Dates:</strong> {task.startDate} - {task.endDate}</p>
                                                         <p><strong>Location:</strong> ({task.latitude}, {task.longitude})</p>
                                                     </div>
@@ -164,32 +161,30 @@ const ConflictModal = ({ latitude, longitude, startDate, endDate, collaborators,
                                 </div>
 
                                 {/* Collaborators' Tasks */}
-                                <div className="mt-4">
-                                    <h3 className="font-semibold">Collaborators</h3>
+                                <div className="mb-4">
+                                    <h3 className="font-semibold text-lg">Collaborators</h3>
+                                    <div className="border-b border-gray-300 mb-2" />
                                     {collabTasks.length === 0 ? (
                                         <p>No collaborator conflicts found.</p>
                                     ) : (
-                                        collabTasks.map((task) => (
-                                            <div key={task.id} className="mb-2">
-                                                <div className="cursor-pointer" >
-                                                    <strong>{task}</strong> 
-                                                </div>
+                                        collabTasks.map((task, index) => (
+                                            <div key={index} className="mb-2">
+                                                <div className="font-medium">{task}</div>
                                             </div>
                                         ))
                                     )}
                                 </div>
 
                                 {/* Other Departments */}
-                                <div className="mt-4">
-                                    <h3 className="font-semibold">Other Departments</h3>
+                                <div className="mb-4 max-h-40 overflow-y-auto">
+                                    <h3 className="font-semibold text-lg">Other Departments</h3>
+                                    <div className="border-b border-gray-300 mb-2" />
                                     {otherTasks.length === 0 ? (
                                         <p>No other conflicting tasks found.</p>
                                     ) : (
                                         otherTasks.map((department, index) => (
                                             <div key={index} className="mb-2">
-                                                <div>
-                                                    <strong>{department}</strong>
-                                                </div>
+                                                <div className="font-medium">{department}</div>
                                             </div>
                                         ))
                                     )}
@@ -197,7 +192,7 @@ const ConflictModal = ({ latitude, longitude, startDate, endDate, collaborators,
                             </>
                         )}
 
-                        <button onClick={onClose} style={closeButtonStyle}>
+                        <button onClick={onClose} className="mt-4 w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
                             Close
                         </button>
                     </div>
@@ -205,39 +200,6 @@ const ConflictModal = ({ latitude, longitude, startDate, endDate, collaborators,
             )}
         </>
     );
-};
-
-// Styles for modal
-const overlayStyle = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center'
-};
-
-const modalStyle = {
-    backgroundColor: '#fff',
-    padding: '20px',
-    borderRadius: '8px',
-    boxShadow: '0px 5px 15px rgba(0, 0, 0, 0.3)',
-    width: '400px',
-    maxHeight: '90vh',
-    overflowY: 'auto'
-};
-
-const closeButtonStyle = {
-    marginTop: '20px',
-    padding: '10px 20px',
-    backgroundColor: '#007BFF',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer'
 };
 
 export default ConflictModal;

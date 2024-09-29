@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
-import { FaTasks, FaLock, FaProjectDiagram } from 'react-icons/fa';
+import { FaTasks, FaLock, FaProjectDiagram, FaSignInAlt } from 'react-icons/fa';
 import { MdNotifications, MdAccountCircle, MdLogout } from 'react-icons/md';
 import { TfiLayoutListPost } from "react-icons/tfi";
 import Logo from '../assets/Logo.png';
@@ -49,7 +49,7 @@ const Header = () => {
                 </Link>
             </nav>
 
-            {/* Right Section - Notification, User Details, and Logout */}
+            {/* Right Section - Notification, User Details, and Login/Logout */}
             <div className="flex items-center space-x-4">
                 <Link href="/notifications" className={`text-gray-700 ${currentPath === '/notifications' ? 'text-blue-600 font-bold' : 'hover:text-blue-600'}`}>
                     <MdNotifications size={24} />
@@ -57,12 +57,21 @@ const Header = () => {
                 <Link href="/user-details" className={`text-gray-700 ${currentPath === '/user-details' ? 'text-blue-600 font-bold' : 'hover:text-blue-600'}`}>
                     <MdAccountCircle size={24} />
                 </Link>
-                <button 
-                    onClick={handleLogout} 
-                    className="flex items-center space-x-1 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                >
-                    <MdLogout size={20} /> <span>Logout</span>
-                </button>
+                {session ? (
+                    <button 
+                        onClick={handleLogout} 
+                        className="flex items-center space-x-1 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                    >
+                        <MdLogout size={20} /> <span>Logout</span>
+                    </button>
+                ) : (
+                    <Link 
+                        href="/login" 
+                        className="flex items-center space-x-1 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                    >
+                        <FaSignInAlt size={20} /> <span>Sign In</span>
+                    </Link>
+                )}
             </div>
         </header>
     );

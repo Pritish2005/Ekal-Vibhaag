@@ -2,8 +2,10 @@
 import Image from 'next/image';
 import React from 'react';
 import Logo from '../assets/Logo.png'
+import { useRouter } from 'next/navigation';
 
 function Page() {
+  const Router = useRouter();
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center">
       {/* Logo */}
@@ -27,13 +29,13 @@ function Page() {
       <div className="flex flex-col md:flex-row gap-4 w-full max-w-md justify-center">
         <button
           className="py-3 px-6 bg-blue-600 text-white text-lg font-semibold rounded-md shadow-md hover:bg-blue-700 transition-all"
-          onClick={() => alert('Employee Login/Signup')}
+          onClick={() => Router.push('/login')}
         >
           Login/Signup as Employee
         </button>
         <button
           className="py-3 px-6 bg-gray-200 text-gray-800 text-lg font-semibold rounded-md shadow-md hover:bg-gray-300 transition-all"
-          onClick={() => alert('Continue as Guest')}
+          onClick={() => Router.push('/blogs')}
         >
           Continue as Guest
         </button>
