@@ -48,7 +48,12 @@ const Login = () => {
     if (result.error) {
       setError(result.error);
     } else {
-      router.push("/dashboard");
+      if(data.isAdmin===true){
+        router.push("/admin");
+      }
+      else{
+        router.push("/dashboard");
+      }
     }
 
     setLoading(false);

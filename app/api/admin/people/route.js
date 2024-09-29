@@ -23,8 +23,12 @@ export const POST = async (request) => {
     const users = await db.collection("users").find({ department }).toArray();
     console.log("Users fetched:", users);
 
-    // Return the users in the response
-    return new NextResponse(JSON.stringify(users), {
+    // Filter out users with isAdmin: true
+    const nonAdminUsers = users.filter(user => !user.isAdmin);
+    console.log("Non-admin users:", nonAdminUsers);
+
+    // Return the filtered users in the response
+    return new NextResponse(JSON.stringify(nonAdminUsers), {
       status: 200,
     });
 
