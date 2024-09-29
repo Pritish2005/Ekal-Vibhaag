@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
+import { getFirestore, collection, query, where, getDocs, updateDoc, doc } from "firebase/firestore";
 import { app } from '../../../lib/firebaseConfig.js';
 import ConflictModal from '../../../components/ConflictModal'; // Import your modal component
 
@@ -36,11 +36,50 @@ function PendingTasks() {
         setIsModalOpen(true);
     };
 
-    // Function to close the modal
-    const closeModal = () => {
+    // Function to close the modal and check if task can be marked as completed
+    const closeModal = async () => {
+        if (selectedTask) {
+            await checkAndUpdateTask(selectedTask.id);
+        }
         setIsModalOpen(false);
         setSelectedTask(null); // Reset selected task when modal is closed
     };
+
+    // Function to check if all conflicts and collaborations are resolved
+    const checkAndUpdateTask = async (taskId) => {
+        try {
+            const tasksRef = collection(db, "tasks");
+            const q = query(tasksRef, where("id", "==", taskId.toString()));
+            const querySnapshot = await getDocs(q);
+    
+            if (!querySnapshot.empty) {
+                const docData = querySnapshot.docs[0]; // Get the first matching document
+                const taskData = docData.data(); // Get task data
+                const taskDocId = docData.id; // This is the Firestore document ID
+    
+                // Ensure conflictingTasks and collaborator are handled properly
+                const conflictingTasks = taskData.conflictingTasks || [];
+                const collaborators = taskData.collaborator || [];
+    
+                // Check if all conflicts and collaborations are resolved
+                const allConflictsResolved = conflictingTasks.every(task => !task.isConflicting);
+                const allCollaborationsResolved = collaborators.every(collab => !collab.isConflicting);
+    
+                // If all conflicts and collaborations are resolved, set isPending to false
+                if (allConflictsResolved && allCollaborationsResolved) {
+                    const updatedTask = { ...taskData, isPending: false };
+                    const taskRef = doc(db, "tasks", taskDocId); // Reference the Firestore document
+                    await updateDoc(taskRef, updatedTask);
+    
+                    // Update the local tasks list to reflect the changes
+                    setTasks(prevTasks => prevTasks.map(t => t.id === taskDocId ? { ...t, isPending: false } : t));
+                }
+            }
+        } catch (error) {
+            console.error("Error updating task: ", error);
+        }
+    };
+    
 
     if (loading) return <p>Loading tasks...</p>;
     if (error) return <p>{error}</p>;
@@ -73,11 +112,7 @@ function PendingTasks() {
                 <ConflictModal
                     isOpen={isModalOpen}
                     onClose={closeModal}
-                    latitude={selectedTask.latitude}
-                    longitude={selectedTask.longitude}
-                    startDate={selectedTask.startDate}
-                    endDate={selectedTask.endDate}
-                    collaborators={selectedTask.collaborator} // Pass collaborators if any
+                    id={selectedTask.id} // Pass the whole task object to the modal
                 />
             )}
         </div>

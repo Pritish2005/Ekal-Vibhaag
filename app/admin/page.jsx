@@ -58,45 +58,62 @@ function Admin() {
             return;
         }
 
+        // Fetch task document by querying the Firestore collection
         const tasksRef = collection(db, "tasks");
-        const q = query(tasksRef, where("id", "==", taskId.toString()));
+        const q = query(tasksRef, where("id", "==", taskId.toString())); // Query by task ID
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
-            const docData = querySnapshot.docs[0]; // Get the first document that matches
-            const taskData = docData.data(); // Get the task data
+            const docData = querySnapshot.docs[0]; // Get the first matching document
+            const taskData = docData.data(); // Get task data
             const taskDocId = docData.id; // This is the Firestore document ID
 
             let updatedTask;
+
+            // Update conflicting tasks
             if (type === "conflicting") {
                 const updatedConflictingTasks = taskData.conflictingTasks.map(task => {
                     if (task.department === dept) {
-                        return { ...task, isRequested: false, isConflicting: false };
+                        return { ...task, isRequested: false, isConflicting: false }; // Set both to false
                     }
                     return task;
                 });
                 updatedTask = { ...taskData, conflictingTasks: updatedConflictingTasks };
-            } else if (type === "collaborator") {
+            } 
+            // Update collaborator
+            else if (type === "collaborator") {
                 const updatedCollaborators = taskData.collaborator.map(collab => {
                     if (collab.dept === dept) {
-                        return { ...collab, isRequested: false };
+                        return { ...collab, isRequested: false, isConflicting: false }; // Set both to false
                     }
                     return collab;
                 });
                 updatedTask = { ...taskData, collaborator: updatedCollaborators };
             }
 
+            // Check if all conflicts and collaborators have been resolved
+            const allConflictsResolved = updatedTask.conflictingTasks?.every(task => !task.isRequested && !task.isConflicting);
+            const allCollaborationsResolved = updatedTask.collaborator?.every(collab => !collab.isRequested && !collab.isConflicting);
+
+            // Set isPending to false if all conflicts and collaborations are resolved
+            if (allConflictsResolved && allCollaborationsResolved) {
+                updatedTask.isPending = false;
+            }
+
+            // Update the task in Firestore
             const taskRef = doc(db, "tasks", taskDocId); 
             await updateDoc(taskRef, updatedTask);
 
-            fetchTasks(); // Refetch tasks to refresh the UI
+            // Refetch tasks to refresh the UI
+            fetchTasks();
         } else {
             console.log('No matching task found.');
         }
     } catch (error) {
         console.error("Error updating task: ", error);
     }
-  };
+};
+
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10">
