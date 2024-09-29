@@ -1,27 +1,37 @@
 'use client'
 import { useState, useEffect } from "react";
-import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
+import { collection, getDocs, query, where, updateDoc, doc } from "firebase/firestore";
 import { app } from "../../../lib/firebaseConfig";
 import { getFirestore } from "firebase/firestore";
 import { AiOutlineEdit } from "react-icons/ai";
+import { useSession } from "next-auth/react"; // Import useSession from NextAuth
+
 const db = getFirestore(app);
+
 const TasksPage = () => {
+  const { data: session, status } = useSession(); // Get session info from NextAuth
   const [tasks, setTasks] = useState([]);
   const [editTask, setEditTask] = useState(null);
 
-  // Fetch tasks from Firebase
   useEffect(() => {
-    const fetchTasks = async () => {
-      const tasksCollection = await getDocs(collection(db, "tasks"));
-      const tasksList = tasksCollection.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setTasks(tasksList);
-    };
+    if (status === "authenticated" && session?.user?.department) {
+      // Fetch tasks only if the user is authenticated and their department is available
+      const fetchTasks = async () => {
+        const q = query(
+          collection(db, "tasks"),
+          where("department", "==", session.user.department) // Filter by user's department
+        );
+        const tasksCollection = await getDocs(q);
+        const tasksList = tasksCollection.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setTasks(tasksList);
+      };
 
-    fetchTasks();
-  }, []);
+      fetchTasks();
+    }
+  }, [session, status]);
 
   // Handle editing of task
   const handleEdit = (task) => {
@@ -37,9 +47,22 @@ const TasksPage = () => {
     setEditTask(null); // Close the edit form
   };
 
+  // Show loading state while session is being fetched
+  if (status === "loading") {
+    return <div>Loading...</div>;
+  }
+
+  // If the user is not authenticated, show a message
+  if (status === "unauthenticated") {
+    return <div>You must be logged in to view this page.</div>;
+  }
+
   return (
     <div className="container mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-6">All Tasks</h1>
+      <h1 className="text-3xl font-bold mb-6">
+        Tasks for Department: {session?.user?.department}
+      </h1>
+
       <table className="min-w-full bg-white">
         <thead>
           <tr>
@@ -52,30 +75,38 @@ const TasksPage = () => {
           </tr>
         </thead>
         <tbody>
-          {tasks.map((task) => (
-            <tr key={task.id}>
-              <td className="py-2 px-4 border-b">#{task.id}</td>
-              <td className="py-2 px-4 border-b">{task.taskDescription}</td>
-              <td className="py-2 px-4 border-b">
-                {task.latitude}, {task.longitude}
-              </td>
-              <td className="py-2 px-4 border-b">
-                {task.isCollab ? task.collaborator : "-"}
-              </td>
-              <td className="py-2 px-4 border-b">
-                {task.conflictExists ? "Conflict" : "No Conflict"}
-              </td>
-              <td className="py-2 px-4 border-b">
-                <button
-                  className="flex items-center bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-700"
-                  onClick={() => handleEdit(task)}
-                >
-                  <AiOutlineEdit className="mr-2" />
-                  Edit
-                </button>
+          {tasks.length > 0 ? (
+            tasks.map((task) => (
+              <tr key={task.id}>
+                <td className="py-2 px-4 border-b">#{task.id}</td>
+                <td className="py-2 px-4 border-b">{task.taskDescription}</td>
+                <td className="py-2 px-4 border-b">
+                  {task.latitude}, {task.longitude}
+                </td>
+                <td className="py-2 px-4 border-b">
+                  {task.isCollab ? task.collaborator : "-"}
+                </td>
+                <td className="py-2 px-4 border-b">
+                  {task.conflictExists ? "Conflict" : "No Conflict"}
+                </td>
+                <td className="py-2 px-4 border-b">
+                  <button
+                    className="flex items-center bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-700"
+                    onClick={() => handleEdit(task)}
+                  >
+                    <AiOutlineEdit className="mr-2" />
+                    Edit
+                  </button>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="6" className="text-center py-4">
+                No tasks found for your department.
               </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
 

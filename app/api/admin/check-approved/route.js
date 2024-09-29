@@ -18,7 +18,10 @@ export const POST = async (req) => {
 
     // Return approval status
     return new Response(
-      JSON.stringify({ isApproved: user.isApproved }),
+      JSON.stringify({ 
+        isApproved: user.isApproved,
+        isAdmin: user.isAdmin,
+      }),
       { status: 200 }
     );
   } catch (error) {

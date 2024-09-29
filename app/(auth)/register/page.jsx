@@ -40,7 +40,6 @@ const Register = () => {
   };
 
   const departments = [
-    "Ministry of Jal Shakti",
     "Ministry of Finance",
     "Ministry of Health",
     "Ministry of Education",
