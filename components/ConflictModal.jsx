@@ -147,8 +147,50 @@ const ConflictModal = ({ id, isOpen, onClose }) => {
         }
     };
 
-    const handleRequestCollab = async (taskId) => {
-        // Your implementation here for handling collaboration requests
+    const handleRequestCollab = async (taskDept) => {
+        try {
+            if (!id) {
+                console.error('No task ID provided.');
+                return;
+            }
+
+            const tasksRef = collection(db, "tasks");
+            const q = query(tasksRef, where("id", "==", id.toString()));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                const docData = querySnapshot.docs[0]; 
+                const tempData = docData.data();
+
+                // Log the retrieved document data
+                console.log("Retrieved document data:", tempData);
+
+                // Check if tempData.collaborator exists and is an array
+                if (!Array.isArray(tempData.collaborator)) {
+                    console.error('No collaborators found or collaborator is not an array in the task document.');
+                    return;
+                }
+
+                const updatedCollaborators = tempData.collaborator.map(task => {
+                    if (task.dept === taskDept) {
+                        return { ...task, isRequested: true }; // Mark as requested
+                    }
+                    return task; // Return unchanged task
+                });
+
+                // Update the Firestore document
+                const updatedCollaboratorsRef = doc(db, "tasks", docData.id);
+                await updateDoc(updatedCollaboratorsRef, { collaborator: updatedCollaborators });
+
+                // Update the local state to reflect the change immediately
+                setCollaborators(updatedCollaborators); // Update the local state
+                console.log(`Updated isRequested to true for collaboration with department: ${taskDept}`);
+            } else {
+                console.log("No tasks found with the given ID.");
+            }
+        } catch (error) {
+            console.error("Error handling collaboration request: ", error);
+        }
     };
 
     return (
@@ -183,15 +225,18 @@ const ConflictModal = ({ id, isOpen, onClose }) => {
                                                 )}
                                             </div>
                                             <button 
-                                                className={`ml-4 px-3 py-1 ${task.isRequested ? 'bg-gray-400 text-gray-600 opacity-50 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`} 
+                                                className={`ml-4 py-1 px-2 border rounded ${task.isRequested ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`} 
+                                                disabled={task.isRequested}
                                                 onClick={() => {
                                                     if (!task.isRequested) {
                                                         handleRequestConflict(task.id);
                                                     }
                                                 }}
-                                                disabled={task.isRequested}
                                             >
-                                                {task.isRequested ? 'Requested' : 'Request Collab'}
+                                                {task.isRequested ? 'Requested' : 'Request'}
+                                            </button>
+                                            <button onClick={() => toggleTaskDetails(task.id)} className="ml-2 text-gray-500">
+                                                {expandedTaskId === task.id ? 'Hide Details' : 'Show Details'}
                                             </button>
                                         </div>
                                     ))}
@@ -199,22 +244,27 @@ const ConflictModal = ({ id, isOpen, onClose }) => {
 
                                 <div className="mb-4">
                                     <h3 className="font-semibold text-lg">Collaborators</h3>
-                                    <div className="border-b border-gray-300 mb-2" />
-                                    {collabTasks.length === 0 ? (
-                                        <p>No collaborator conflicts found.</p>
-                                    ) : (
-                                        collabTasks.map((task, index) => (
-                                            <div key={index} className="mb-2 flex justify-between items-center">
-                                                <div className="font-medium">{task.dept}</div>
-                                                <button 
-                                                    className="ml-4 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600" 
-                                                    onClick={() => handleRequestCollab(task.id)}
-                                                >
-                                                    Request Collab
-                                                </button>
+                                    {collabTasks.map((collabTask) => (
+                                        <div key={collabTask.id} className="mb-2 p-2 border border-gray-300 rounded flex justify-between items-center">
+                                            <div>
+                                                <strong>Collaborator Name:</strong> {collabTask.name}
+                                                <div className="text-sm text-gray-500">
+                                                    <strong>Department:</strong> {collabTask.dept}
+                                                </div>
                                             </div>
-                                        ))
-                                    )}
+                                            <button 
+                                                className={`ml-4 py-1 px-2 border rounded ${collabTask.isRequested ? 'bg-gray-300 cursor-not-allowed' : 'bg-green-500 text-white hover:bg-green-600'}`} 
+                                                disabled={collabTask.isRequested}
+                                                onClick={() => {
+                                                    if (!collabTask.isRequested) {
+                                                        handleRequestCollab(collabTask.dept);
+                                                    }
+                                                }}
+                                            >
+                                                {collabTask.isRequested ? 'Requested' : 'Request Collaboration'}
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
 
                                 <div className="mb-4 max-h-40 overflow-y-auto">
