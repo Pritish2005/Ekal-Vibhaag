@@ -82,6 +82,7 @@ function Addtask() {
     const [loading, setLoading] = useState(false);
     const [isSubmitBlocked, setIsSubmitBlocked] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [uniqueId, setUniqueId] = useState(Date.now().toString()); // Store unique ID in state
 
     const mapContainerRef = useRef(null);
     const mapInstance = useRef(null);
@@ -104,8 +105,6 @@ function Addtask() {
         }
     }, [latitude, longitude]);
 
-    const uniqueId = Date.now().toString();
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true); // Start loading state
@@ -118,26 +117,42 @@ function Addtask() {
         const hasConflicts = conflicts.length > 0;
         const hasCollaborators = iscollab && collaborator.length > 0;
     
+        // Create modified collaborator array
+        const modifiedCollaborators = collaborator.map(dept => ({
+            dept: dept,
+            isRequested: false,
+            isConflicting: hasConflicts // or any logic to determine if it's conflicting
+        }));
+    
         if (hasConflicts || hasCollaborators) {
+            // Show confirmation dialog
+            const userConfirmed = window.confirm("Conflicting tasks found. Do you want to proceed anyway?");
+            if (!userConfirmed) {
+                // If user cancels, reset loading and return early
+                setLoading(false);
+                return;
+            }
+    
             // Block submission if conflicts or collaborators are selected
             setConflictingTasks(conflicts); // Set conflicting tasks to state
             setError('Conflicting task found or collaborators selected.');
             setIsSubmitBlocked(true); // Block submission
             setIsPending(true); // Set pending to true
             openModal(); // Open the modal
-            await saveTaskToFirebase(true, conflicts); // Save task as pending
+            await saveTaskToFirebase(true, conflicts, modifiedCollaborators); // Save task as pending
         } else {
             // If no conflicts and no collaborators, proceed with submission
             setIsSubmitBlocked(false);
             setIsPending(false);
-            await saveTaskToFirebase(false, []); // Save task without conflicts
+            await saveTaskToFirebase(false, [], modifiedCollaborators); // Save task without conflicts
             router.push(`/dashboard/addtask/${uniqueId}`); // Redirect to dashboard
         }
     
         setLoading(false); // Stop loading after submission
     };
     
-    const saveTaskToFirebase = async (isPending, conflicts) => {
+    
+    const saveTaskToFirebase = async (isPending, conflicts, collaborators) => {
         try {
             const docRef = await addDoc(collection(db, "tasks"), {
                 id: uniqueId,
@@ -146,13 +161,13 @@ function Addtask() {
                 startDate,
                 endDate,
                 isCollab: iscollab,
-                collaborator: iscollab ? collaborator : null,
+                collaborator: iscollab ? collaborators : null, // Use modified collaborator array
                 latitude,
                 longitude,
                 resourceAllocation,
                 userEmail: userDetails.email,
                 department: userDetails.department,
-                conflictingTasks: conflicts,
+                conflictingTasks: conflicts, // conflicts include isRequested and isConflicting
                 isPending,
             });
     
@@ -162,30 +177,34 @@ function Addtask() {
             setError('Failed to submit task.');
         }
     };
-
-const checkForConflicts = async () => {
-    const tasksRef = collection(db, 'tasks');
-    const q = query(tasksRef, where("latitude", "==", latitude), where("longitude", "==", longitude));
-    const querySnapshot = await getDocs(q);
-    const conflicts = [];
-
-    querySnapshot.forEach((doc) => {
-        const existingTask = doc.data();
-        if (hasDateOverlap(startDate, endDate, existingTask.startDate, existingTask.endDate)) {
-            conflicts.push({
-                id: doc.id,
-                department: existingTask.department,
-                description: existingTask.taskDescription,
-                latitude: existingTask.latitude,
-                longitude: existingTask.longitude,
-                startDate: existingTask.startDate,
-                endDate: existingTask.endDate
-            });
-        }
-    });
-
-    return conflicts;
-};
+    
+    const checkForConflicts = async () => {
+        const tasksRef = collection(db, 'tasks');
+        const q = query(tasksRef, where("latitude", "==", latitude), where("longitude", "==", longitude));
+        const querySnapshot = await getDocs(q);
+        const conflicts = [];
+    
+        querySnapshot.forEach((doc) => {
+            const existingTask = doc.data();
+            if (hasDateOverlap(startDate, endDate, existingTask.startDate, existingTask.endDate)) {
+                conflicts.push({
+                    id: existingTask.id,
+                    name: existingTask.taskName,
+                    department: existingTask.department,
+                    description: existingTask.taskDescription,
+                    latitude: existingTask.latitude,
+                    longitude: existingTask.longitude,
+                    startDate: existingTask.startDate,
+                    endDate: existingTask.endDate,
+                    isRequested: false, // Add isRequested property
+                    isConflicting: true // Add isConflicting property
+                });
+            }
+        });
+    
+        return conflicts;
+    };
+    
 
 
     const hasDateOverlap = (newStart, newEnd, existingStart, existingEnd) => {
@@ -230,15 +249,7 @@ const checkForConflicts = async () => {
             See Conflicts
         </button>
 
-        <ConflictModal
-             latitude={latitude}
-             longitude={longitude}
-             startDate={startDate}
-             endDate={endDate}
-             collaborators={collaborator}  
-             isOpen={isModalOpen}
-             onClose={closeModal}
-        />
+        <ConflictModal id={uniqueId} isOpen={isModalOpen} onClose={closeModal} /> 
             <form className='flex flex-col gap-6' onSubmit={handleSubmit}>
                 {/* Form Fields */}
                 <input

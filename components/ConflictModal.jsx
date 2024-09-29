@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
+import { getFirestore, doc, getDoc, updateDoc, getDocs, collection, where, query } from "firebase/firestore";
 import { app } from '../lib/firebaseConfig.js';
 import { MdReportProblem } from "react-icons/md";
 
@@ -56,9 +56,11 @@ const departments = [
     "Legislative Department"
 ];
 
-const ConflictModal = ({ latitude, longitude, startDate, endDate, collaborators, isOpen, onClose }) => {
+const ConflictModal = ({ id, isOpen, onClose }) => {
     const [conflictingTasks, setConflictingTasks] = useState([]);
+    const [collaborators, setCollaborators] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [taskData, setTaskData] = useState(null);
     const [expandedTaskId, setExpandedTaskId] = useState(null);
     const db = getFirestore(app);
 
@@ -71,28 +73,23 @@ const ConflictModal = ({ latitude, longitude, startDate, endDate, collaborators,
     const fetchConflictingTasks = async () => {
         setLoading(true);
         try {
-            const tasksRef = collection(db, 'tasks');
-            const q = query(tasksRef, where("latitude", "==", latitude), where("longitude", "==", longitude));
+            if (!id) {
+                console.error('No task ID provided.');
+                return;
+            }
+
+            const tasksRef = collection(db, "tasks");
+            const q = query(tasksRef, where("id", "==", id.toString()));
             const querySnapshot = await getDocs(q);
-            const conflicts = [];
 
-            querySnapshot.forEach((doc) => {
-                const existingTask = doc.data();
-                if (hasDateOverlap(startDate, endDate, existingTask.startDate, existingTask.endDate)) {
-                    conflicts.push({
-                        id: doc.id,
-                        name: existingTask.taskName,
-                        department: existingTask.department,
-                        description: existingTask.taskDescription,
-                        latitude: existingTask.latitude,
-                        longitude: existingTask.longitude,
-                        startDate: existingTask.startDate,
-                        endDate: existingTask.endDate
-                    });
-                }
-            });
-
-            setConflictingTasks(conflicts);
+            if (!querySnapshot.empty) {
+                const docData = querySnapshot.docs[0].data();
+                setTaskData(docData);
+                setConflictingTasks(docData.conflictingTasks || []);
+                setCollaborators(docData.collaborator || []);
+            } else {
+                console.log("No tasks found with the given ID.");
+            }
         } catch (error) {
             console.error("Error fetching conflicting tasks: ", error);
         } finally {
@@ -100,51 +97,80 @@ const ConflictModal = ({ latitude, longitude, startDate, endDate, collaborators,
         }
     };
 
-    const hasDateOverlap = (newStart, newEnd, existingStart, existingEnd) => {
-        const newStartDate = new Date(newStart);
-        const newEndDate = new Date(newEnd);
-        const existingStartDate = new Date(existingStart);
-        const existingEndDate = new Date(existingEnd);
-
-        return (newStartDate <= existingEndDate && newEndDate >= existingStartDate);
-    };
-
     const suggestedTasks = conflictingTasks; 
     const collabTasks = collaborators;
 
+    const collaboratorDepartments = collaborators.map(collab => collab.dept);
+    const conflictingDepartments = conflictingTasks.map(task => task.department);
+
     const otherTasks = departments.filter(department => 
-        !collaborators.includes(department) && 
-        !conflictingTasks.some(task => task.department === department)
+        !collaboratorDepartments.includes(department) && 
+        !conflictingDepartments.includes(department)
     );
 
     const toggleTaskDetails = (taskId) => {
         setExpandedTaskId(prev => (prev === taskId ? null : taskId));
     };
 
+    const handleRequestConflict = async (taskId) => {
+        try {
+            if (!id) {
+                console.error('No task ID provided.');
+                return;
+            }
+            const tasksRef = collection(db, "tasks");
+            const q = query(tasksRef, where("id", "==", id.toString()));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                const docData = querySnapshot.docs[0]; 
+                const tempData = docData.data();
+
+                const updatedConflictingTasks = tempData.conflictingTasks.map(task => {
+                    if (task.id === taskId.toString()) {
+                        return { ...task, isRequested: true }; // Mark as requested
+                    }
+                    return task;
+                });
+
+                // Update the Firestore document
+                const updatedConflictingTasksRef = doc(db, "tasks", docData.id);
+                await updateDoc(updatedConflictingTasksRef, { conflictingTasks: updatedConflictingTasks });
+
+                // Update the local state to reflect the change immediately
+                setConflictingTasks(updatedConflictingTasks); // Update the local state
+            } else {
+                console.log("No tasks found with the given ID.");
+            }
+        } catch (error) {
+            console.error("Error handling conflict request: ", error);
+        }
+    };
+
+    const handleRequestCollab = async (taskId) => {
+        // Your implementation here for handling collaboration requests
+    };
+
     return (
         <>
             {isOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-                    <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full">
+                    <div className="bg-white p-6 rounded-lg shadow-lg max-w-3xl w-full max-h-[80vh] overflow-y-auto">
                         <h2 className="text-lg font-bold mb-4 flex items-center">
                             <MdReportProblem size={24} className="mr-2" />
                             Conflicting Tasks
                         </h2>
-
                         {loading ? (
                             <div className="flex justify-center items-center">
                                 <p>Loading...</p>
                             </div>
                         ) : (
                             <>
-                                {/* Suggested Tasks by AI */}
                                 <div className="mb-4">
                                     <h3 className="font-semibold text-lg">Suggested by AI</h3>
-                                    {suggestedTasks.length === 0 ? (
-                                        <p>No suggested conflicts found.</p>
-                                    ) : (
-                                        suggestedTasks.map((task) => (
-                                            <div key={task.id} className="mb-2 p-2 border border-gray-300 rounded hover:bg-gray-100 cursor-pointer" onClick={() => toggleTaskDetails(task.id)}>
+                                    {suggestedTasks.map((task) => (
+                                        <div key={task.id} className="mb-2 p-2 border border-gray-300 rounded hover:bg-gray-100 cursor-pointer flex justify-between items-center">
+                                            <div>
                                                 <strong>Task Name:</strong> {task.name}
                                                 <div className="text-sm text-gray-500">
                                                     <strong>Department:</strong> {task.department}
@@ -156,11 +182,21 @@ const ConflictModal = ({ latitude, longitude, startDate, endDate, collaborators,
                                                     </div>
                                                 )}
                                             </div>
-                                        ))
-                                    )}
+                                            <button 
+                                                className={`ml-4 px-3 py-1 ${task.isRequested ? 'bg-gray-400 text-gray-600 opacity-50 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`} 
+                                                onClick={() => {
+                                                    if (!task.isRequested) {
+                                                        handleRequestConflict(task.id);
+                                                    }
+                                                }}
+                                                disabled={task.isRequested}
+                                            >
+                                                {task.isRequested ? 'Requested' : 'Request Collab'}
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
 
-                                {/* Collaborators' Tasks */}
                                 <div className="mb-4">
                                     <h3 className="font-semibold text-lg">Collaborators</h3>
                                     <div className="border-b border-gray-300 mb-2" />
@@ -168,14 +204,19 @@ const ConflictModal = ({ latitude, longitude, startDate, endDate, collaborators,
                                         <p>No collaborator conflicts found.</p>
                                     ) : (
                                         collabTasks.map((task, index) => (
-                                            <div key={index} className="mb-2">
-                                                <div className="font-medium">{task}</div>
+                                            <div key={index} className="mb-2 flex justify-between items-center">
+                                                <div className="font-medium">{task.dept}</div>
+                                                <button 
+                                                    className="ml-4 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600" 
+                                                    onClick={() => handleRequestCollab(task.id)}
+                                                >
+                                                    Request Collab
+                                                </button>
                                             </div>
                                         ))
                                     )}
                                 </div>
 
-                                {/* Other Departments */}
                                 <div className="mb-4 max-h-40 overflow-y-auto">
                                     <h3 className="font-semibold text-lg">Other Departments</h3>
                                     <div className="border-b border-gray-300 mb-2" />
@@ -191,7 +232,6 @@ const ConflictModal = ({ latitude, longitude, startDate, endDate, collaborators,
                                 </div>
                             </>
                         )}
-
                         <button onClick={onClose} className="mt-4 w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
                             Close
                         </button>
