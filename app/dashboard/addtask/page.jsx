@@ -1,41 +1,92 @@
-'use client'
+'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css'; // Import CSS
 import { getFirestore, collection, addDoc, query, where, getDocs } from "firebase/firestore"; // Firebase
 import { app } from '../../../lib/firebaseConfig.js';
 import { useRouter } from 'next/navigation.js';
+import { useSession } from 'next-auth/react';
+import { MdReportProblem } from "react-icons/md";
+import ConflictModal from '../../../components/ConflictModal';
 
 function Addtask() {
-    // User information
+    // Hooks should always be declared at the top
     const db = getFirestore(app);
-    const userDetails = {
-        email: "rujul@gmail.com",
-        department: "road",
-        role: "admin"
-    };
+    const { data: session, status } = useSession(); // Access session data and status
+    const userDetails = session?.user || {}; // Handle session undefined case safely
 
-    // State for all inputs
+    const collaboratorsArray = [
+        "Department for Promotion of Industry and Internal Trade",
+        "Department of Administrative Reforms and Public Grievances (DARPG)",
+        "Department of Agricultural Research and Education (DARE)",
+        "Department of Agriculture and Farmers Welfare",
+        "Department of Animal Husbandry and Dairying",
+        "Department of Biotechnology",
+        "Department of Border Management",
+        "Department of Chemicals and Petrochemicals",
+        "Department of Commerce",
+        "Department of Consumer Affairs",
+        "Department of Defence",
+        "Department of Defence Production",
+        "Department of Defence Research and Development",
+        "Department of Drinking Water and Sanitation",
+        "Department of Economic Affairs",
+        "Department of Empowerment of Persons with Disabilities",
+        "Department of Ex-Servicemen Welfare",
+        "Department of Expenditure",
+        "Department of Fertilizers",
+        "Department of Financial Services",
+        "Department of Fisheries",
+        "Department of Food and Public Distribution",
+        "Department of Health Research",
+        "Department of Health and Family Welfare",
+        "Department of Higher Education",
+        "Department of Military Affairs (DMA)",
+        "Department of Official Language",
+        "Department of Pension & Pensioner's Welfare",
+        "Department of Personnel and Training",
+        "Department of Pharmaceuticals",
+        "Department of Home",
+        "Department of Investment and Public Asset Management",
+        "Department of Justice",
+        "Department of Land Resources (DLR)",
+        "Department of Legal Affairs",
+        "Department of Posts",
+        "Department of Public Enterprises",
+        "Department of Revenue",
+        "Department of Rural Development",
+        "Department of School Education and Literacy",
+        "Department of Science and Technology",
+        "Department of Scientific and Industrial Research",
+        "Department of Social Justice and Empowerment",
+        "Department of Sports",
+        "Department of Telecommunications",
+        "Department of Water Resources, River Development and Ganga Rejuvenation",
+        "Department of Youth Affairs",
+        "Legislative Department"
+    ];
+    
+
     const [taskName, setTaskName] = useState('');
     const [taskDescription, setTaskDescription] = useState('');
+    const [collaborator, setCollaborator] = useState([]);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [iscollab, setIsCollab] = useState(false);
-    const [collaborator, setCollaborator] = useState('');
     const [latitude, setLatitude] = useState('');
     const [longitude, setLongitude] = useState('');
     const [error, setError] = useState(null);
     const [conflictingTasks, setConflictingTasks] = useState([]);
-    const [proceed, setProceed] = useState(false); // Flag to handle override
+    const [isPending, setIsPending] = useState(false);
     const [resourceAllocation, setResourceAllocation] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [isSubmitBlocked, setIsSubmitBlocked] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // Ref for the map container
     const mapContainerRef = useRef(null);
     const mapInstance = useRef(null);
     const router = useRouter();
 
-    // Initialize the map when latitude and longitude are valid
     useEffect(() => {
         if (latitude && longitude && mapContainerRef.current) {
             if (mapInstance.current) {
@@ -57,20 +108,36 @@ function Addtask() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true);
+        setLoading(true); // Start loading state
+        setError(null); // Reset error before submission
     
-        // Check for conflicts only if not already overriding
-        if (!proceed) {
-            const conflicts = await checkForConflicts();
-            if (conflicts.length > 0) {
-                setConflictingTasks(conflicts);
-                setError('Conflicting task found. Do you wish to proceed?');
-                setLoading(false); // Stop loading when conflicts are found
-                return;
-            }
+        // Check for conflicts
+        const conflicts = await checkForConflicts();
+    
+        // Set isPending based on conflicts or collaborator selection
+        const hasConflicts = conflicts.length > 0;
+        const hasCollaborators = iscollab && collaborator.length > 0;
+    
+        if (hasConflicts || hasCollaborators) {
+            // Block submission if conflicts or collaborators are selected
+            setConflictingTasks(conflicts); // Set conflicting tasks to state
+            setError('Conflicting task found or collaborators selected.');
+            setIsSubmitBlocked(true); // Block submission
+            setIsPending(true); // Set pending to true
+            openModal(); // Open the modal
+            await saveTaskToFirebase(true, conflicts); // Save task as pending
+        } else {
+            // If no conflicts and no collaborators, proceed with submission
+            setIsSubmitBlocked(false);
+            setIsPending(false);
+            await saveTaskToFirebase(false, []); // Save task without conflicts
+            router.push(`/dashboard/addtask/${uniqueId}`); // Redirect to dashboard
         }
     
-        // If no conflicts or user has chosen to proceed
+        setLoading(false); // Stop loading after submission
+    };
+    
+    const saveTaskToFirebase = async (isPending, conflicts) => {
         try {
             const docRef = await addDoc(collection(db, "tasks"), {
                 id: uniqueId,
@@ -85,73 +152,42 @@ function Addtask() {
                 resourceAllocation,
                 userEmail: userDetails.email,
                 department: userDetails.department,
-                conflictingTasks: conflictingTasks, // Add the conflicting tasks info
-                conflictExists: conflictingTasks.length > 0, // Boolean to indicate conflict
-                role: userDetails.role
+                conflictingTasks: conflicts,
+                isPending,
             });
     
             console.log("Document written with ID: ", docRef.id);
-    
-            // After adding the current task, update the conflicting tasks
-            for (let conflict of conflictingTasks) {
-                const conflictingTaskRef = collection(db, 'tasks');
-                const q = query(conflictingTaskRef, where('id', '==', conflict.id));
-                const querySnapshot = await getDocs(q);
-    
-                querySnapshot.forEach(async (doc) => {
-                    // Update the conflicting task with the current task's conflict
-                    const docRef = doc.ref;
-                    const existingConflicts = doc.data().conflictingTasks || [];
-    
-                    await docRef.update({
-                        conflictingTasks: [...existingConflicts, {
-                            id: uniqueId,
-                            department: userDetails.department,
-                            description: taskDescription,
-                            latitude: latitude,
-                            longitude: longitude,
-                            startDate: startDate,
-                            endDate: endDate
-                        }],
-                        conflictExists: true // Ensure the conflictExists flag is set to true
-                    });
-                });
-            }
-    
-            router.push(`/dashboard/addtask/${uniqueId}`);
         } catch (error) {
             console.error("Error adding document: ", error);
-        } finally {
-            setLoading(false); // Always stop loading after the task is added
+            setError('Failed to submit task.');
         }
     };
 
-    // Function to check for conflicting tasks
-    const checkForConflicts = async () => {
-        const tasksRef = collection(db, 'tasks');
-        const q = query(tasksRef, where("latitude", "==", latitude), where("longitude", "==", longitude));
-        const querySnapshot = await getDocs(q);
-        const conflicts = [];
+const checkForConflicts = async () => {
+    const tasksRef = collection(db, 'tasks');
+    const q = query(tasksRef, where("latitude", "==", latitude), where("longitude", "==", longitude));
+    const querySnapshot = await getDocs(q);
+    const conflicts = [];
 
-        querySnapshot.forEach((doc) => {
-            const existingTask = doc.data();
-            if (hasDateOverlap(startDate, endDate, existingTask.startDate, existingTask.endDate)) {
-                conflicts.push({
-                    id: doc.id,
-                    department: existingTask.department,
-                    description: existingTask.taskDescription,
-                    latitude: existingTask.latitude,
-                    longitude: existingTask.longitude,
-                    startDate: existingTask.startDate,
-                    endDate: existingTask.endDate
-                });
-            }
-        });
+    querySnapshot.forEach((doc) => {
+        const existingTask = doc.data();
+        if (hasDateOverlap(startDate, endDate, existingTask.startDate, existingTask.endDate)) {
+            conflicts.push({
+                id: doc.id,
+                department: existingTask.department,
+                description: existingTask.taskDescription,
+                latitude: existingTask.latitude,
+                longitude: existingTask.longitude,
+                startDate: existingTask.startDate,
+                endDate: existingTask.endDate
+            });
+        }
+    });
 
-        return conflicts;
-    };
+    return conflicts;
+};
 
-    // Helper function to check for overlapping dates
+
     const hasDateOverlap = (newStart, newEnd, existingStart, existingEnd) => {
         const newStartDate = new Date(newStart);
         const newEndDate = new Date(newEnd);
@@ -161,39 +197,50 @@ function Addtask() {
         return (newStartDate <= existingEndDate && newEndDate >= existingStartDate);
     };
 
-    const handleProceed = () => {
-        setProceed(true);
-        setError(null); // Clear the error and proceed with task creation
-        setLoading(true); // Start loading when the user decides to proceed
+    // Render based on session and status
+    if (status === 'loading') {
+        return <div>Loading...</div>;
+    }
+
+    if (!session) {
+        return (
+            <div className="flex flex-col items-center justify-center h-screen text-center">
+                <h1 className="text-2xl font-bold">Please Login</h1>
+                <p className="mt-4">You need to be logged in to view this page.</p>
+            </div>
+        );
+    }
+
+    const openModal = () => {
+        setIsModalOpen(true);
+    };
+
+    // Function to handle closing the modal
+    const closeModal = () => {
+        setIsModalOpen(false);
     };
 
     return (
         <div className="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-lg">
-            <h1 className='text-3xl font-bold mb-6 text-center'>Add Task</h1>
-            {error && 
-                <div className="bg-red-100 text-red-800 p-4 rounded-lg mb-6">
-                    <p>{error}</p>
-                    {conflictingTasks.length > 0 && 
-                        <div>
-                            <h2 className="text-lg font-semibold">Conflicting Tasks:</h2>
-                            <ul className="list-disc pl-6">
-                                {conflictingTasks.map((task, index) => (
-                                    <li key={index} className="mt-2">
-                                        <strong>Description:</strong> {task.description} <br />
-                                        <strong>Location:</strong> {task.latitude}, {task.longitude} <br />
-                                        <strong>Start:</strong> {task.startDate} <br />
-                                        <strong>End:</strong> {task.endDate}
-                                    </li>
-                                ))}
-                            </ul>
-                            <button onClick={handleProceed} className='bg-blue-500 text-white mt-4 px-4 py-2 rounded-lg hover:bg-blue-600'>
-                                Proceed Anyway
-                            </button>
-                        </div>
-                    }
-                </div>
-            }
+        <h1 className='text-3xl font-bold mb-6 text-center'>Add Task</h1>
+        <button 
+            onClick={openModal} 
+            className="flex items-center bg-red-500 my-4 mx-auto text-white px-4 py-2 rounded hover:bg-yellow-600"
+        >
+            See Conflicts
+        </button>
+
+        <ConflictModal
+             latitude={latitude}
+             longitude={longitude}
+             startDate={startDate}
+             endDate={endDate}
+             collaborators={collaborator}  
+             isOpen={isModalOpen}
+             onClose={closeModal}
+        />
             <form className='flex flex-col gap-6' onSubmit={handleSubmit}>
+                {/* Form Fields */}
                 <input
                     type="text"
                     placeholder="Enter Task Name"
@@ -218,6 +265,7 @@ function Addtask() {
                     required
                     className="p-3 border border-gray-300 rounded-lg"
                 />
+                {/* Date Fields */}
                 <div className='grid grid-cols-2 gap-4'>
                     <div className='flex flex-col'>
                         <label htmlFor='startDate' className='mb-2 font-medium'>Start Date</label>
@@ -240,58 +288,67 @@ function Addtask() {
                         />
                     </div>
                 </div>
-                <div className='flex items-center gap-4'>
-                    <input
-                        type="checkbox"
-                        id='isCollab'
-                        checked={iscollab}
-                        onChange={() => setIsCollab(!iscollab)}
-                        className="h-4 w-4"
-                    />
-                    <label htmlFor='isCollab' className="font-medium">Collaborate?</label>
-                    {iscollab &&
-                        <select
-                            value={collaborator}
-                            onChange={(e) => setCollaborator(e.target.value)}
+                {/* Coordinates */}
+                <div className='grid grid-cols-2 gap-4'>
+                    <div className='flex flex-col'>
+                        <label htmlFor='latitude' className='mb-2 font-medium'>Latitude</label>
+                        <input
+                            type="text"
+                            placeholder="Latitude"
+                            value={latitude}
+                            onChange={(e) => setLatitude(e.target.value)}
                             required
                             className="p-3 border border-gray-300 rounded-lg"
-                        >
-                            <option value=''>Select Collaborator</option>
-                            <option value="Water Department">Water Department</option>
-                            <option value="Electricity Department">Electricity Department</option>
-                            <option value="Fire Department">Fire Department</option>
-                        </select>
-                    }
+                        />
+                    </div>
+                    <div className='flex flex-col'>
+                        <label htmlFor='longitude' className='mb-2 font-medium'>Longitude</label>
+                        <input
+                            type="text"
+                            placeholder="Longitude"
+                            value={longitude}
+                            onChange={(e) => setLongitude(e.target.value)}
+                            required
+                            className="p-3 border border-gray-300 rounded-lg"
+                        />
+                    </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <input
-                        type='text'
-                        placeholder='Enter Latitude'
-                        value={latitude}
-                        onChange={(e) => setLatitude(e.target.value)}
-                        required
-                        className="p-3 border border-gray-300 rounded-lg"
-                    />
-                    <input
-                        type='text'
-                        placeholder='Enter Longitude'
-                        value={longitude}
-                        onChange={(e) => setLongitude(e.target.value)}
-                        required
-                        className="p-3 border border-gray-300 rounded-lg"
-                    />
-                </div>
-                {latitude !== '' && longitude !== '' &&
-                    <div style={{ height: '400px', width: '100%' }} ref={mapContainerRef} className="mt-6 rounded-lg border border-gray-300" /> // Map container
-                }
-                <button type="submit" className='bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600'>
-                    {
-                        loading ?
-                        'Loading...'
-                        :
-                        'Add Task'
-                    }
-                </button>
+                {/* Collaborator */}
+                <div className='flex items-center'>
+    <label htmlFor='isCollab' className='font-medium mr-3'>Is this a Collaborative Task?</label>
+    <input
+        type="checkbox"
+        checked={iscollab}
+        onChange={(e) => setIsCollab(e.target.checked)}
+        id="isCollab"
+    />
+</div>
+
+{iscollab && (
+    <div className="flex flex-col">
+        <label htmlFor="collaborator" className="font-medium">Select Collaborators</label>
+        <select
+            multiple
+            value={collaborator}
+            onChange={(e) => setCollaborator(Array.from(e.target.selectedOptions, option => option.value))}
+            className="p-3 border border-gray-300 rounded-lg"
+        >
+            {collaboratorsArray.map((collab, index) => (
+                <option key={index} value={collab}>{collab}</option>
+            ))}
+        </select>
+        <p className="mt-2 text-sm text-gray-500">Hold down the Ctrl (Windows) or Command (Mac) button to select multiple options.</p>
+    </div>
+)}
+
+                {/* Submit Button */}
+                <button
+    type="submit"
+    disabled={loading || isSubmitBlocked}
+    className="bg-blue-500 text-white py-3 rounded-lg shadow-lg hover:bg-blue-600 disabled:opacity-50"
+>
+    {loading ? 'Submitting...' : isPending ? 'Conflicts Exist' : 'Submit Task'}
+</button>
             </form>
         </div>
     );
