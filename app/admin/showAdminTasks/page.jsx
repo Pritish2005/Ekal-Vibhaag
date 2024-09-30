@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiEdit, FiTrash2, FiMessageCircle } from "react-icons/fi"; // Import the chat icon
 import Logo from "../../../assets/Logo.png";
+import { RiCalendarScheduleLine } from "react-icons/ri";
 
 const dummyTasks = [
   {
@@ -58,6 +59,11 @@ function ShowAdminTasks() {
     console.log(`Chat with task ${id}`);
     // Redirect to the chat page with task ID as a query parameter
     router.push(`/chat`);
+  };
+  const handleSchedule = (id) => {
+    console.log(`Chat with task ${id}`);
+    // Redirect to the chat page with task ID as a query parameter
+    router.push(`/schedule`);
   };
 
   return (
@@ -118,6 +124,12 @@ function ShowAdminTasks() {
                   className="text-green-500 hover:text-green-700"
                 >
                   <FiMessageCircle />
+                </button>
+                <button
+                  onClick={() => handleSchedule(task.id)}
+                  className="text-green-500 hover:text-green-700"
+                >
+                  <RiCalendarScheduleLine />
                 </button>
               </td>
             </tr>

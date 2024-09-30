@@ -1,6 +1,6 @@
-'use client';
+"use client";
 import React, { useState, useEffect } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { getFirestore } from "@firebase/firestore";
 import { initializeApp } from "firebase/app";
 import { AiOutlineEdit } from "react-icons/ai";
@@ -23,10 +23,14 @@ const BlogList = () => {
   const [blogs, setBlogs] = useState([]);
   const { data: session } = useSession(); // Get user session
 
-  // Fetch all blogs from Firestore
+  // Fetch all blogs from Firestore and order by `createdAt` field in descending order
   useEffect(() => {
     const fetchBlogs = async () => {
-      const querySnapshot = await getDocs(collection(db, "blogs"));
+      const blogQuery = query(
+        collection(db, "blogs"),
+        orderBy("createdAt", "desc")
+      ); // Order by `createdAt`
+      const querySnapshot = await getDocs(blogQuery);
       const blogPosts = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -64,7 +68,10 @@ const BlogList = () => {
                 <div className="text-gray-600 text-right mb-4">
                   <span>By {blog.author}</span>
                   <br />
-                  <span>{blog.date}</span>
+                  <span>
+                    {new Date(blog.createdAt?.toDate()).toLocaleDateString()}
+                  </span>{" "}
+                  {/* Convert Firestore Timestamp to readable date */}
                 </div>
 
                 <p className="text-gray-600 mb-4">
@@ -75,13 +82,13 @@ const BlogList = () => {
                 {/* Only show Edit button if user's department matches the blog's department */}
                 {session && session.user.department === blog.department && (
                   <div className="flex justify-end">
-                    <button
+                    {/* <button
                       className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-700"
                       onClick={() => handleEdit(blog)}
                       aria-label="Edit"
                     >
                       <AiOutlineEdit size={20} />
-                    </button>
+                    </button> */}
                   </div>
                 )}
               </div>

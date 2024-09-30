@@ -1,8 +1,7 @@
-
 "use client";
 
 import React, { useState } from "react";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { getFirestore } from "@firebase/firestore";
 import { initializeApp } from "firebase/app";
 import { useSession } from "next-auth/react";
@@ -23,13 +22,11 @@ const db = getFirestore(app);
 const WriteBlog = () => {
   const { data: session, status } = useSession(); // Always use hooks at the top level
 
-  // Avoid rendering logic around hooks
   const [blog, setBlog] = useState({
     title: "",
     content: "",
     author: session?.user?.email || "",
     department: session?.user?.department || "",
-    date: new Date().toLocaleDateString(),
   });
 
   // Return loading or login screen before rendering the form
@@ -55,8 +52,11 @@ const WriteBlog = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Add the blog to Firestore
-    await addDoc(collection(db, "blogs"), blog);
+    // Add the blog to Firestore with server timestamp
+    await addDoc(collection(db, "blogs"), {
+      ...blog,
+      createdAt: serverTimestamp(), // Add the createdAt timestamp
+    });
 
     // Reset the form
     setBlog({
@@ -64,7 +64,6 @@ const WriteBlog = () => {
       content: "",
       author: session.user.email, // Reset with author from session
       department: session.user.department, // Reset with department from session
-      date: new Date().toLocaleDateString(),
     });
 
     alert("Blog post added successfully!");
