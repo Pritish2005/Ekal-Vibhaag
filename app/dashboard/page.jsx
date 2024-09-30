@@ -17,11 +17,15 @@ function Dashboard() {
 
   // Image URLs for the slider
   const images = [
-    { url: "https://images.unsplash.com/photo-1726942371143-3afca583a72f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw3fHx8ZW58MHx8fHx8fHx8" },
-    { url: "https://images.unsplash.com/photo-1726497864623-7a681908fccd?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwxNHx8fGVufDB8fHx8fA%3D%3D" },
-    { url: "https://images.unsplash.com/photo-1725904411459-fe8233df1424?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwxMnx8fGVufDB8fHx8fA%3D%3D" },
-    { url: "https://plus.unsplash.com/premium_photo-1723507306975-36dfe1666df3?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwxOXx8fGVufDB8fHx8fA%3D%3D" },
-    { url: "https://plus.unsplash.com/premium_photo-1724174932633-6e9fc851e182?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwxNXx8fGVufDB8fHx8fA%3D%3D" },
+    {
+      url: "https://parivahan.gov.in/parivahan//sites/default/files/banner-swachhata-hi-seva.jpg",
+    },
+    {
+      url: "https://parivahan.gov.in/parivahan//sites/default/files/banner-english-digital-india-awards-2022-option-3.jpg",
+    },
+    {
+      url: "https://mp.gov.in/uploads/slider/HarGharTiranga17235434931582717570.jpeg",
+    },
   ];
 
   // Fetch tasks when session is available
@@ -75,19 +79,50 @@ function Dashboard() {
         <div className="flex items-center">
           <div className="ml-4">
             <h1 className="text-lg font-bold">
-              Welcome, {session ? session.user.email : 'Loading...'}
+              Welcome, {session ? session.user.email : "Loading..."}
             </h1>
             {session && <p>Department: {session.user.department}</p>}
           </div>
         </div>
+
+        {/* Button on the right side */}
+        <div className="mr-4">
+          <button
+            onClick={() => {
+              // Handle chat button click, e.g., redirect to chat page
+              router.push("/admin"); // Ensure you have the useRouter hook imported
+            }}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Admin Window
+          </button>
+        </div>
       </div>
 
-      {/* Image Slider */}
+      {/* Image Slider
       <div className="mt-5 mb-8 flex justify-center">
         <SimpleImageSlider
           width={'90%'}
           height={200}
           images={images}
+          showBullets={true}
+          showNavs={true}
+        />
+      </div> */}
+      {/* Image Slider */}
+      <div className="mt-5 mb-8 flex justify-center">
+        <SimpleImageSlider
+          width={"90%"}
+          height={300}
+          images={images.map((image) => ({
+            ...image,
+            // Add style to control how the image fits
+            style: {
+              objectFit: "cover", // Use 'cover' if you want to maintain aspect ratio and fill the space
+              width: "100%", // Ensure the image takes full width
+              height: "100%", // Ensure the image takes full height
+            },
+          }))}
           showBullets={true}
           showNavs={true}
         />
@@ -98,25 +133,25 @@ function Dashboard() {
         <div className="flex justify-center gap-4">
           <button
             className="bg-orange-400 text-white px-6 py-2 rounded-lg hover:bg-orange-500"
-            onClick={() => router.push('/dashboard/addtask')}
+            onClick={() => router.push("/dashboard/addtask")}
           >
             Add Task
           </button>
           <button
             className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600"
-            onClick={() => router.push('/dashboard/viewtasks')}
+            onClick={() => router.push("/dashboard/viewtasks")}
           >
             View All Tasks
           </button>
           <button
             className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
-            onClick={() => router.push('/dashboard/postblog')}
+            onClick={() => router.push("/dashboard/postblog")}
           >
             Post Blog
           </button>
           <button
             className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600"
-            onClick={() => router.push('/dashboard/pendingprojects')}
+            onClick={() => router.push("/dashboard/pendingprojects")}
           >
             Pending Projects
           </button>
@@ -138,10 +173,19 @@ function Dashboard() {
                   onClick={() => router.push(`/dashboard/addtask/${task.id}`)} // Link to task dashboard
                 >
                   <h3 className="text-lg font-semibold mb-2">{task.name}</h3>
-                  <p className="text-gray-700 mb-2"><strong>Description:</strong> {task.description}</p>
-                  <p className="text-gray-700 mb-2"><strong>Location:</strong> {task.latitude}, {task.longitude}</p>
-                  <p className="text-gray-700 mb-2"><strong>Start:</strong> {task.startDate.toLocaleDateString()}</p>
-                  <p className="text-gray-700 mb-2"><strong>End:</strong> {task.endDate.toLocaleDateString()}</p>
+                  <p className="text-gray-700 mb-2">
+                    <strong>Description:</strong> {task.description}
+                  </p>
+                  <p className="text-gray-700 mb-2">
+                    <strong>Location:</strong> {task.latitude}, {task.longitude}
+                  </p>
+                  <p className="text-gray-700 mb-2">
+                    <strong>Start:</strong>{" "}
+                    {task.startDate.toLocaleDateString()}
+                  </p>
+                  <p className="text-gray-700 mb-2">
+                    <strong>End:</strong> {task.endDate.toLocaleDateString()}
+                  </p>
                 </div>
               ))
             ) : (

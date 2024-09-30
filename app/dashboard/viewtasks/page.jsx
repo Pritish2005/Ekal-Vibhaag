@@ -1,6 +1,13 @@
-'use client'
+"use client";
 import { useState, useEffect } from "react";
-import { collection, getDocs, query, where, updateDoc, doc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  updateDoc,
+  doc,
+} from "firebase/firestore";
 import { app } from "../../../lib/firebaseConfig";
 import { getFirestore } from "firebase/firestore";
 import { AiOutlineEdit } from "react-icons/ai";
@@ -12,11 +19,15 @@ const TasksPage = () => {
   const { data: session, status } = useSession(); // Get session info from NextAuth
   const [tasks, setTasks] = useState([]);
   const [editTask, setEditTask] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
+  const [loading, setLoading] = useState(true); // Loading state
+  const [saveLoading, setSaveLoading] = useState(false); // Save loading state
+  const [saveSuccess, setSaveSuccess] = useState(null); // Save success state
 
   useEffect(() => {
-    if (status === "authenticated" && session?.user?.department) {
-      // Fetch tasks only if the user is authenticated and their department is available
-      const fetchTasks = async () => {
+    const fetchTasks = async () => {
+      setLoading(true); // Start loading
+      if (status === "authenticated" && session?.user?.department) {
         const q = query(
           collection(db, "tasks"),
           where("department", "==", session.user.department) // Filter by user's department
@@ -27,29 +38,64 @@ const TasksPage = () => {
           ...doc.data(),
         }));
         setTasks(tasksList);
-      };
+      }
+      setLoading(false); // End loading
+    };
 
-      fetchTasks();
-    }
+    fetchTasks();
   }, [session, status]);
 
-  // Handle editing of task
+  // Handle opening the edit modal
   const handleEdit = (task) => {
     setEditTask(task);
+    setIsModalOpen(true); // Open modal when editing a task
   };
 
   // Handle task updates
   const handleSave = async (taskId) => {
-    const taskDoc = doc(db, "tasks", taskId);
-    await updateDoc(taskDoc, {
-      ...editTask,
-    });
-    setEditTask(null); // Close the edit form
+    setSaveLoading(true); // Start save loading
+    setSaveSuccess(null); // Reset save success state
+    try {
+      const taskDoc = doc(db, "tasks", taskId);
+      await updateDoc(taskDoc, {
+        ...editTask,
+      });
+      setEditTask(null); // Close the edit form
+      setIsModalOpen(false); // Close modal after saving changes
+      // Refresh the tasks after saving
+      await fetchTasks(); // Re-fetch tasks
+      setSaveSuccess(true); // Set save success to true
+    } catch (error) {
+      console.error("Error updating task:", error);
+      setSaveSuccess(false); // Set save success to false on error
+    } finally {
+      setSaveLoading(false); // End save loading
+    }
+  };
+
+  // Fetch tasks as a separate function for reuse
+  const fetchTasks = async () => {
+    if (status === "authenticated" && session?.user?.department) {
+      const q = query(
+        collection(db, "tasks"),
+        where("department", "==", session.user.department) // Filter by user's department
+      );
+      const tasksCollection = await getDocs(q);
+      const tasksList = tasksCollection.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setTasks(tasksList);
+    }
   };
 
   // Show loading state while session is being fetched
-  if (status === "loading") {
-    return <div>Loading...</div>;
+  if (status === "loading" || loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <h1 className="text-2xl">Loading...</h1>
+      </div>
+    );
   }
 
   // If the user is not authenticated, show a message
@@ -110,40 +156,102 @@ const TasksPage = () => {
         </tbody>
       </table>
 
-      {editTask && (
-        <div className="mt-6">
-          <h2 className="text-2xl mb-4">Edit Task #{editTask.id}</h2>
-          <div className="flex flex-col gap-4">
-            <div>
-              <label>Description</label>
-              <input
-                type="text"
-                value={editTask.taskDescription}
-                onChange={(e) =>
-                  setEditTask({ ...editTask, taskDescription: e.target.value })
-                }
-                className="w-full p-2 border rounded"
-              />
+      {/* Modal for editing task */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-1/3">
+            <h2 className="text-2xl mb-4">Edit Task #{editTask.id}</h2>
+            <div className="flex flex-col gap-4">
+              <div>
+                <label>Description</label>
+                <input
+                  type="text"
+                  value={editTask.taskDescription}
+                  onChange={(e) =>
+                    setEditTask({
+                      ...editTask,
+                      taskDescription: e.target.value,
+                    })
+                  }
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              <div>
+                <label>Location (Latitude, Longitude)</label>
+                <input
+                  type="text"
+                  value={`${editTask.latitude}, ${editTask.longitude}`}
+                  onChange={(e) => {
+                    const [lat, lng] = e.target.value
+                      .split(",")
+                      .map((coord) => coord.trim());
+                    setEditTask({ ...editTask, latitude: lat, longitude: lng });
+                  }}
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              <div>
+                <label>Collaborator</label>
+                <input
+                  type="text"
+                  value={editTask.collaborator || ""}
+                  onChange={(e) =>
+                    setEditTask({ ...editTask, collaborator: e.target.value })
+                  }
+                  className="w-full p-2 border rounded"
+                  disabled={!editTask.isCollab}
+                />
+              </div>
+              <div>
+                <label>Status</label>
+                <select
+                  value={editTask.conflictExists ? "Conflict" : "No Conflict"}
+                  onChange={(e) =>
+                    setEditTask({
+                      ...editTask,
+                      conflictExists: e.target.value === "Conflict",
+                    })
+                  }
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="No Conflict">No Conflict</option>
+                  <option value="Conflict">Conflict</option>
+                </select>
+              </div>
+              <button
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700"
+                onClick={() => handleSave(editTask.id)}
+              >
+                Save Changes
+              </button>
+              <button
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"
+                onClick={() => setIsModalOpen(false)}
+              >
+                Cancel
+              </button>
             </div>
-            <div>
-              <label>Collaborator</label>
-              <input
-                type="text"
-                value={editTask.collaborator || ""}
-                onChange={(e) =>
-                  setEditTask({ ...editTask, collaborator: e.target.value })
-                }
-                className="w-full p-2 border rounded"
-                disabled={!editTask.isCollab}
-              />
-            </div>
-            <button
-              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700"
-              onClick={() => handleSave(editTask.id)}
-            >
-              Save Changes
-            </button>
           </div>
+        </div>
+      )}
+
+      {/* Save Loading Indicator */}
+      {saveLoading && (
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
+          <h1 className="text-2xl text-white">Saving changes...</h1>
+        </div>
+      )}
+
+      {/* Alert for Save Success/Failure */}
+      {saveSuccess !== null && (
+        <div
+          className={`fixed bottom-4 right-4 p-4 rounded-lg text-white ${
+            saveSuccess ? "bg-green-500" : "bg-red-500"
+          }`}
+        >
+          {saveSuccess
+            ? "Changes saved successfully!"
+            : "Failed to save changes!"}
         </div>
       )}
     </div>

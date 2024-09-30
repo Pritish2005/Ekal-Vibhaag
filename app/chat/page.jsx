@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import { useState } from "react";
 import { AiOutlineSend } from "react-icons/ai";
 
@@ -8,11 +8,26 @@ export default function ChatPage() {
     { user: "them", text: "Hello!" },
   ]);
   const [inputValue, setInputValue] = useState("");
+  const [typing, setTyping] = useState(false); // To show typing animation
 
   const sendMessage = () => {
     if (inputValue.trim()) {
       setMessages([...messages, { user: "me", text: inputValue }]);
       setInputValue("");
+
+      // Delay for showing the typing animation after 2 seconds
+      setTimeout(() => {
+        setTyping(true); // Show typing animation
+
+        // Simulate a 2-second delay for the other person's response after typing starts
+        setTimeout(() => {
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            { user: "them", text: "Sure!" },
+          ]);
+          setTyping(false); // Hide typing animation after response
+        }, 2000);
+      }, 2000); // Delay before typing starts
     }
   };
 
@@ -41,6 +56,15 @@ export default function ChatPage() {
               </div>
             </div>
           ))}
+
+          {/* Typing animation */}
+          {typing && (
+            <div className="flex justify-start mb-2">
+              <div className="bg-gray-300 p-3 rounded-lg max-w-xs">
+                <div className="animate-pulse">Typing...</div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Message Input */}

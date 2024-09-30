@@ -51,7 +51,7 @@ const Header = () => {
 
             {/* Right Section - Notification, User Details, and Login/Logout */}
             <div className="flex items-center space-x-4">
-                <Link href="/notifications" className={`text-gray-700 ${currentPath === '/notifications' ? 'text-blue-600 font-bold' : 'hover:text-blue-600'}`}>
+                <Link href="/login" className={`text-gray-700 ${currentPath === '/login' ? 'text-blue-600 font-bold' : 'hover:text-blue-600'}`}>
                     <MdNotifications size={24} />
                 </Link>
                 <Link href="/user-details" className={`text-gray-700 ${currentPath === '/user-details' ? 'text-blue-600 font-bold' : 'hover:text-blue-600'}`}>

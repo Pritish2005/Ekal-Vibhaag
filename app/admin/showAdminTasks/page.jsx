@@ -1,35 +1,37 @@
-'use client';
-import Image from 'next/image';
-import React, { useEffect, useState } from 'react';
-import { FiEdit, FiTrash2 } from 'react-icons/fi';
-import Logo from '../../../assets/Logo.png';
+"use client";
+import Image from "next/image";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { FiEdit, FiTrash2, FiMessageCircle } from "react-icons/fi"; // Import the chat icon
+import Logo from "../../../assets/Logo.png";
 
 const dummyTasks = [
   {
     id: "#14523",
-    description: "Road Maintenance and pothole filling",
+    description: "Bus Service to be stated on Route 752",
     location: "Dwarka Sector 14",
-    collaborationWith: ["Water Department #14432"],
-    status: "Completed"
+    collaborationWith: ["Road Department #14432"],
+    status: "Completed",
   },
   {
     id: "#15643",
-    description: "Gas Pipeline Installation",
-    location: "Dwarka Sector 14",
-    collaborationWith: ["Water Department #14432", "Gas Department #14212"],
-    status: "Ongoing"
+    description: "5 DTC Buses Annual Maintenance",
+    location: "Cannought Place",
+    collaborationWith: [],
+    status: "Ongoing",
   },
   {
     id: "#16987",
-    description: "Street Light Installation",
-    location: "Dwarka Sector 14",
-    collaborationWith: [],
-    status: "Approval Pending"
-  }
+    description: "Refilling of Empty Water Tanks",
+    location: "Gurugram Sector 54",
+    collaborationWith: ["Water Department #12243"],
+    status: "Approval Pending",
+  },
 ];
 
 function ShowAdminTasks() {
-  const [currentTime, setCurrentTime] = useState('');
+  const [currentTime, setCurrentTime] = useState("");
+  const router = useRouter(); // Initialize the router
 
   useEffect(() => {
     const updateTime = () => {
@@ -50,6 +52,12 @@ function ShowAdminTasks() {
   const handleDelete = (id) => {
     console.log(`Delete task ${id}`);
     // Implement delete functionality
+  };
+
+  const handleChat = (id) => {
+    console.log(`Chat with task ${id}`);
+    // Redirect to the chat page with task ID as a query parameter
+    router.push(`/chat`);
   };
 
   return (
@@ -77,18 +85,19 @@ function ShowAdminTasks() {
         </thead>
         <tbody>
           {dummyTasks.map((task) => (
-            <tr key={task.id} className="border-b border-gray-200 hover:bg-gray-100">
+            <tr
+              key={task.id}
+              className="border-b border-gray-200 hover:bg-gray-100"
+            >
               <td className="py-3 px-4">{task.id}</td>
               <td className="py-3 px-4">{task.description}</td>
               <td className="py-3 px-4">{task.location}</td>
               <td className="py-3 px-4">
-                {task.collaborationWith.length > 0 ? (
-                  task.collaborationWith.map((dept, index) => (
-                    <div key={index}>{dept}</div>
-                  ))
-                ) : (
-                  "-"
-                )}
+                {task.collaborationWith.length > 0
+                  ? task.collaborationWith.map((dept, index) => (
+                      <div key={index}>{dept}</div>
+                    ))
+                  : "-"}
               </td>
               <td className="py-3 px-4">{task.status}</td>
               <td className="py-3 px-4 flex space-x-2">
@@ -103,6 +112,12 @@ function ShowAdminTasks() {
                   className="text-red-500 hover:text-red-700"
                 >
                   <FiTrash2 />
+                </button>
+                <button
+                  onClick={() => handleChat(task.id)}
+                  className="text-green-500 hover:text-green-700"
+                >
+                  <FiMessageCircle />
                 </button>
               </td>
             </tr>
